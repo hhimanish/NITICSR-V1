@@ -47,7 +47,7 @@ export default function RootLayout({
       <body
         className={`${fontSans.variable} ${fontMono.variable} ${fontNumeric.variable} antialiased`}
       >
-        <TooltipProvider delayDuration={150}>{children}</TooltipProvider>
+        <TooltipProvider delay={150}>{children}</TooltipProvider>
       </body>
     </html>
   );

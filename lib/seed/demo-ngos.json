@@ -1,0 +1,146 @@
+[
+  {
+    "id": "ngo-001",
+    "name": "Prakash Foundation for Rural Learning",
+    "causeAreas": ["Education", "Rural Development"],
+    "states": ["Uttar Pradesh", "Bihar", "Madhya Pradesh"],
+    "description": "Runs after-school learning centers and teacher training programs across underserved rural districts.",
+    "foundedYear": 2009
+  },
+  {
+    "id": "ngo-002",
+    "name": "Jeevan Health Collective",
+    "causeAreas": ["Healthcare"],
+    "states": ["Maharashtra", "Madhya Pradesh", "Pan-India"],
+    "description": "Operates mobile health clinics and maternal-care outreach in tier-2 and tier-3 towns.",
+    "foundedYear": 2012
+  },
+  {
+    "id": "ngo-003",
+    "name": "GreenRoots Environmental Trust",
+    "causeAreas": ["Environment & Sustainability"],
+    "states": ["Karnataka", "Kerala", "Tamil Nadu"],
+    "description": "Leads urban afforestation, wetland restoration, and community composting initiatives.",
+    "foundedYear": 2015
+  },
+  {
+    "id": "ngo-004",
+    "name": "Jalasetu Water Initiative",
+    "causeAreas": ["Water & Sanitation", "Rural Development"],
+    "states": ["Rajasthan", "Gujarat"],
+    "description": "Builds decentralized water-harvesting infrastructure and WASH programs in drought-prone blocks.",
+    "foundedYear": 2011
+  },
+  {
+    "id": "ngo-005",
+    "name": "Kaushal Skills Alliance",
+    "causeAreas": ["Skill Development & Livelihoods"],
+    "states": ["Telangana", "Karnataka", "Pan-India"],
+    "description": "Delivers vocational training and job placement pipelines for youth in urban informal settlements.",
+    "foundedYear": 2016
+  },
+  {
+    "id": "ngo-006",
+    "name": "Nari Shakti Collective",
+    "causeAreas": ["Women Empowerment & Gender Equality", "Skill Development & Livelihoods"],
+    "states": ["Rajasthan", "Uttar Pradesh"],
+    "description": "Builds women-led self-help groups and micro-enterprise incubation in semi-urban clusters.",
+    "foundedYear": 2010
+  },
+  {
+    "id": "ngo-007",
+    "name": "Sahayata Disaster Response Network",
+    "causeAreas": ["Disaster Relief"],
+    "states": ["Odisha", "West Bengal", "Assam"],
+    "description": "Coordinates first-response relief logistics and post-flood rehabilitation programs.",
+    "foundedYear": 2008
+  },
+  {
+    "id": "ngo-008",
+    "name": "Virasat Arts & Heritage Society",
+    "causeAreas": ["Arts, Culture & Heritage"],
+    "states": ["Rajasthan", "Delhi NCR"],
+    "description": "Preserves traditional crafts and folk-art livelihoods through artisan cooperatives.",
+    "foundedYear": 2013
+  },
+  {
+    "id": "ngo-009",
+    "name": "Annapurna Nutrition Mission",
+    "causeAreas": ["Poverty Alleviation & Hunger", "Healthcare"],
+    "states": ["Bihar", "Madhya Pradesh", "Pan-India"],
+    "description": "Runs community kitchens and child-nutrition monitoring in high-malnutrition districts.",
+    "foundedYear": 2007
+  },
+  {
+    "id": "ngo-010",
+    "name": "Vidya Setu Digital Learning Trust",
+    "causeAreas": ["Education"],
+    "states": ["Maharashtra", "Karnataka", "Telangana"],
+    "description": "Deploys low-bandwidth digital classrooms and teacher-upskilling tools in government schools.",
+    "foundedYear": 2017
+  },
+  {
+    "id": "ngo-011",
+    "name": "Swasthya Bharat Health Alliance",
+    "causeAreas": ["Healthcare", "Rural Development"],
+    "states": ["Uttar Pradesh", "Bihar", "Pan-India"],
+    "description": "Operates diagnostic camps and tele-medicine linkages for last-mile primary healthcare.",
+    "foundedYear": 2014
+  },
+  {
+    "id": "ngo-012",
+    "name": "Punarnava Wetlands Trust",
+    "causeAreas": ["Environment & Sustainability", "Water & Sanitation"],
+    "states": ["West Bengal", "Assam"],
+    "description": "Restores freshwater ecosystems and trains local youth as conservation stewards.",
+    "foundedYear": 2018
+  },
+  {
+    "id": "ngo-013",
+    "name": "Udyam Youth Livelihoods Foundation",
+    "causeAreas": ["Skill Development & Livelihoods", "Poverty Alleviation & Hunger"],
+    "states": ["Gujarat", "Maharashtra"],
+    "description": "Connects first-generation job seekers with apprenticeships in manufacturing and retail.",
+    "foundedYear": 2019
+  },
+  {
+    "id": "ngo-014",
+    "name": "Kanya Shiksha Trust",
+    "causeAreas": ["Women Empowerment & Gender Equality", "Education"],
+    "states": ["Rajasthan", "Madhya Pradesh"],
+    "description": "Funds scholarships and safe-transport programs to reduce girls' school dropout rates.",
+    "foundedYear": 2012
+  },
+  {
+    "id": "ngo-015",
+    "name": "Sahyadri Conservation Collective",
+    "causeAreas": ["Environment & Sustainability"],
+    "states": ["Maharashtra", "Karnataka", "Kerala"],
+    "description": "Runs biodiversity monitoring and reforestation projects across the Western Ghats buffer zone.",
+    "foundedYear": 2015
+  },
+  {
+    "id": "ngo-016",
+    "name": "Aarogya Setu Community Clinics",
+    "causeAreas": ["Healthcare", "Water & Sanitation"],
+    "states": ["Tamil Nadu", "Kerala", "Telangana"],
+    "description": "Operates community health workers' networks focused on maternal and child health.",
+    "foundedYear": 2011
+  },
+  {
+    "id": "ngo-017",
+    "name": "Nirmaan Housing & Relief Trust",
+    "causeAreas": ["Disaster Relief", "Rural Development"],
+    "states": ["Odisha", "Bihar", "Pan-India"],
+    "description": "Rebuilds resilient housing and community infrastructure after climate-related disasters.",
+    "foundedYear": 2006
+  },
+  {
+    "id": "ngo-018",
+    "name": "Shilpkaar Craft Livelihoods Cooperative",
+    "causeAreas": ["Arts, Culture & Heritage", "Skill Development & Livelihoods"],
+    "states": ["Gujarat", "Rajasthan", "Uttar Pradesh"],
+    "description": "Links rural artisan clusters to formal design and export markets through fair-trade contracts.",
+    "foundedYear": 2013
+  }
+]
