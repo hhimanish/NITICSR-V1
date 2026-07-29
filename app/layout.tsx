@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -43,12 +44,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${fontSans.variable} ${fontMono.variable} ${fontNumeric.variable} antialiased`}
-      >
-        <TooltipProvider delay={150}>{children}</TooltipProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${fontSans.variable} ${fontMono.variable} ${fontNumeric.variable} antialiased`}
+        >
+          <TooltipProvider delay={150}>{children}</TooltipProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

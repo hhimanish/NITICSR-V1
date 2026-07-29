@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: niticsr-os
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: CEREBRAS_API_KEY
+        scope: secret
+      - key: CLERK_SECRET_KEY
+        scope: secret
+      - key: CLERK_PUBLISHABLE_KEY
+        value: ""
+      - key: DATABASE_URL
+        scope: secret
+      - key: RESEND_API_KEY
+        scope: secret
+      - key: CONTACT_NOTIFY_EMAIL
+        value: ""
+      - key: CONTACT_FROM_EMAIL
+        value: ""
+
+databases:
+  - name: postgres-niticsr
+    databaseName: niticsr_db
+    plan: free
+    postgresMajorVersion: 15
