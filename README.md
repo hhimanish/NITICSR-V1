@@ -42,7 +42,7 @@ You'll need accounts and API keys for:
 
 2. **Clerk** (Auth)
    - Create an app at [https://clerk.com](https://clerk.com) (free tier)
-   - Copy publishable and secret keys to `.env.local` (`CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`)
+   - Copy publishable and secret keys to `.env.local` (`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`)
 
 3. **Postgres** (Database)
    - For local dev: `postgres://localhost/niticsr_local`

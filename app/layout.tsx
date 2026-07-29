@@ -44,14 +44,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${fontSans.variable} ${fontMono.variable} ${fontNumeric.variable} antialiased`}
-        >
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${fontSans.variable} ${fontMono.variable} ${fontNumeric.variable} antialiased`}
+      >
+        <ClerkProvider>
           <TooltipProvider delay={150}>{children}</TooltipProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

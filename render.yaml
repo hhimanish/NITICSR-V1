@@ -11,19 +11,21 @@ services:
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
       - key: CEREBRAS_API_KEY
-        scope: secret
+        sync: false
       - key: CLERK_SECRET_KEY
-        scope: secret
-      - key: CLERK_PUBLISHABLE_KEY
-        value: ""
+        sync: false
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
       - key: DATABASE_URL
-        scope: secret
+        fromDatabase:
+          name: postgres-niticsr
+          property: connectionString
       - key: RESEND_API_KEY
-        scope: secret
+        sync: false
       - key: CONTACT_NOTIFY_EMAIL
-        value: ""
+        sync: false
       - key: CONTACT_FROM_EMAIL
-        value: ""
+        sync: false
 
 databases:
   - name: postgres-niticsr
