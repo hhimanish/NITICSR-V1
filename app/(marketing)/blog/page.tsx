@@ -8,6 +8,9 @@ import { blogPosts } from "@/lib/blog-posts";
 export const metadata: Metadata = {
   title: "Knowledge Center",
   description: "Practical guides on CSR compliance, NGO due diligence, and Schedule VII in India.",
+  alternates: {
+    types: { "application/rss+xml": "/blog/rss.xml" },
+  },
 };
 
 export default function BlogIndexPage() {

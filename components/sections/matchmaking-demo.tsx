@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FadeIn } from "@/components/motion/fade-in";
+import { trackEvent } from "@/lib/analytics";
 import { budgetBands, causeAreas, indianStates, type MatchResult } from "@/lib/schemas";
 
 type Status = "idle" | "loading" | "error";
@@ -30,6 +31,7 @@ export function MatchmakingDemo() {
     setStatus("loading");
     setMatches([]);
     setErrorMessage(null);
+    trackEvent("matchmaking_demo_submitted", { causeArea, state, budgetBand });
 
     try {
       const res = await fetch("/api/match", {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ConsentBanner } from "@/components/site/consent-banner";
 import "./globals.css";
 
 const fontSans = Geist({
@@ -36,6 +37,40 @@ export const metadata: Metadata = {
     locale: "en_IN",
     type: "website",
   },
+  alternates: {
+    canonical: "/",
+  },
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "NITICSR",
+  url: "https://niticsr.com",
+  description:
+    "India's enterprise operating system for Corporate CSR — AI-matched NGO discovery, verification, and Schedule VII compliance.",
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "NITICSR",
+  url: "https://niticsr.com",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://niticsr.com/blog?q={search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
+};
+
+const softwareApplicationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "NITICSR",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "Enterprise operating system for Corporate CSR in India — AI matchmaking, NGO verification, and Schedule VII compliance workflows.",
 };
 
 export default function RootLayout({
@@ -48,8 +83,15 @@ export default function RootLayout({
       <body
         className={`${fontSans.variable} ${fontMono.variable} ${fontNumeric.variable} antialiased`}
       >
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
+        />
         <ClerkProvider>
           <TooltipProvider delay={150}>{children}</TooltipProvider>
+          <ConsentBanner />
         </ClerkProvider>
       </body>
     </html>

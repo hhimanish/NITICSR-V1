@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs, type BreadcrumbItem } from "@/components/design-system/breadcrumbs";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger-reveal";
 import { FinalCta } from "@/components/sections/final-cta";
@@ -18,11 +19,13 @@ export type SolutionPageData = {
   description: string;
   audience: string[];
   capabilities: SolutionCapability[];
+  breadcrumbs?: BreadcrumbItem[];
 };
 
 export function SolutionPage({ data }: { data: SolutionPageData }) {
   return (
     <>
+      {data.breadcrumbs && <Breadcrumbs items={data.breadcrumbs} />}
       <section className="border-b border-border bg-card py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <FadeIn>

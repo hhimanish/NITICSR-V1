@@ -146,11 +146,19 @@ paths:
   /csr-projects:
     get:
       summary: List CSR projects for an organization (requires CSR.Project.Read)
+      description: >
+        Supports an optional radius search (lat + lng + radiusKm, all three
+        required together) computed with a plain Haversine formula over
+        project_locations — no PostGIS required at this scale. When present,
+        results are ordered by distance and include a distance_km field.
       parameters:
         - { name: organizationId, in: query, required: true, schema: { type: string, format: uuid } }
         - { name: status, in: query, schema: { type: string } }
         - { name: state, in: query, schema: { type: string } }
         - { name: sort, in: query, schema: { type: string, enum: [newest, oldest] } }
+        - { name: lat, in: query, schema: { type: number }, description: "Requires lng and radiusKm" }
+        - { name: lng, in: query, schema: { type: number }, description: "Requires lat and radiusKm" }
+        - { name: radiusKm, in: query, schema: { type: number }, description: "Requires lat and lng" }
         - { name: limit, in: query, schema: { type: integer } }
         - { name: page, in: query, schema: { type: integer } }
       responses:

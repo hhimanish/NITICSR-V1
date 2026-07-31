@@ -12,6 +12,7 @@ export default function AuditorSolutionPage() {
   return (
     <SolutionPage
       data={{
+        breadcrumbs: [{ label: "Solutions", href: "/solutions/auditors" }, { label: "Auditors", href: "/solutions/auditors" }],
         eyebrow: "Solutions / Auditors",
         title: "Independent visibility into CSR spend and compliance",
         description:

@@ -12,6 +12,7 @@ export default function CorporateSolutionPage() {
   return (
     <SolutionPage
       data={{
+        breadcrumbs: [{ label: "Solutions", href: "/solutions/corporate" }, { label: "Corporate CSR", href: "/solutions/corporate" }],
         eyebrow: "Solutions / Corporate CSR",
         title: "CSR budget, matched to verified impact",
         description:

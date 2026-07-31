@@ -12,6 +12,7 @@ export default function ComplianceAutomationPage() {
   return (
     <SolutionPage
       data={{
+        breadcrumbs: [{ label: "Solutions", href: "/compliance-automation" }, { label: "Compliance Automation", href: "/compliance-automation" }],
         eyebrow: "Compliance Automation",
         title: "Compliance that documents itself as you work",
         description:

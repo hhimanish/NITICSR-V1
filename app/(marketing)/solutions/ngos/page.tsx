@@ -12,6 +12,7 @@ export default function NgoSolutionPage() {
   return (
     <SolutionPage
       data={{
+        breadcrumbs: [{ label: "Solutions", href: "/solutions/ngos" }, { label: "NGOs", href: "/solutions/ngos" }],
         eyebrow: "Solutions / NGOs",
         title: "Get discovered by corporates who are already looking for you",
         description:

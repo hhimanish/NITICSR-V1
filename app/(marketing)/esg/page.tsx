@@ -12,6 +12,7 @@ export default function EsgPage() {
   return (
     <SolutionPage
       data={{
+        breadcrumbs: [{ label: "Solutions", href: "/esg" }, { label: "ESG & Sustainability", href: "/esg" }],
         eyebrow: "ESG & Sustainability",
         title: "ESG reporting, grounded in real project data",
         description:

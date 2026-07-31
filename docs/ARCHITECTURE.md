@@ -128,6 +128,16 @@ are modeled in the schema (`notifications.channel`) so the data layer is
 ready, but are not wired to a real send path — see the comment in
 `lib/notifications.ts`.
 
+## Analytics & consent
+
+`lib/analytics.ts` provides a `trackEvent()` call sites can use today (wired
+into the contact form and matchmaking demo submits), plus a consent banner
+(`components/site/consent-banner.tsx`) that gates it. No analytics provider
+is connected — none has been chosen — so `trackEvent()` is a logged no-op in
+development and silent in production. Wiring a real provider (Plausible,
+PostHog, GA4) later means editing the one function in `lib/analytics.ts`,
+not every call site.
+
 ## Deferred to roadmap
 
 These were in the original Phase 2 brief but depend on infrastructure or

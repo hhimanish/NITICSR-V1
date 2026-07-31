@@ -12,6 +12,7 @@ export default function PlatformPage() {
   return (
     <SolutionPage
       data={{
+        breadcrumbs: [{ label: "Platform", href: "/platform" }],
         eyebrow: "Platform",
         title: "One operating system for your entire CSR program",
         description:

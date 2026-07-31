@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
 
+import { Breadcrumbs } from "@/components/design-system/breadcrumbs";
 import { FadeIn } from "@/components/motion/fade-in";
 import { caseStudies } from "@/lib/case-studies";
 
@@ -9,6 +10,7 @@ export function CaseStudyShell({ slug, children }: { slug: string; children: Rea
 
   return (
     <article className="py-20 sm:py-28">
+      <Breadcrumbs items={[{ label: "Resources", href: "/resources" }, { label: "Case Studies", href: "/case-studies" }, { label: study?.title ?? slug, href: `/case-studies/${slug}` }]} />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <FadeIn>
           <Link
