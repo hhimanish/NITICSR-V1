@@ -2,7 +2,9 @@ import { Pool } from "pg";
 
 let pool: Pool | null = null;
 
-function getPool() {
+/** Shared connection pool. Every module that needs Postgres should go through
+ * this rather than constructing its own Pool. */
+export function getPool() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is not set");
   }

@@ -1,0 +1,287 @@
+openapi: 3.0.3
+info:
+  title: NITICSR OS API
+  version: "1.0"
+  description: >
+    Core Phase 2 REST API. All endpoints require a valid Clerk session
+    (cookie-based for the web app, or a future API-key scheme for
+    server-to-server use — see docs/ARCHITECTURE.md roadmap). Every
+    write is checked against the caller's permission-based role for the
+    organization being acted on.
+servers:
+  - url: /api/v1
+security:
+  - clerkSession: []
+components:
+  securitySchemes:
+    clerkSession:
+      type: apiKey
+      in: cookie
+      name: __session
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        issues: { nullable: true }
+    Envelope:
+      type: object
+      properties:
+        data: {}
+        meta: { nullable: true, type: object }
+    Organization:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        type: { type: string, enum: [corporate, ngo, auditor] }
+        role: { type: string }
+    NgoProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        organization_id: { type: string, format: uuid }
+        legal_name: { type: string }
+        registration_number: { type: string, nullable: true }
+        registration_type: { type: string, enum: [trust, society, section8], nullable: true }
+        headquarters_state: { type: string, nullable: true }
+        operating_states: { type: array, items: { type: string } }
+        cause_category_keys: { type: array, items: { type: string } }
+    CsrProject:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        status:
+          type: string
+          enum: [draft, proposed, approved, active, completed, cancelled]
+        budget_amount: { type: number, nullable: true }
+        corporate_org_id: { type: string, format: uuid }
+        ngo_profile_id: { type: string, format: uuid, nullable: true }
+    VerificationRequest:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [pending, in_review, approved, rejected] }
+        ngo_profile_id: { type: string, format: uuid }
+        review_notes: { type: string, nullable: true }
+paths:
+  /organizations:
+    get:
+      summary: List organizations the current user belongs to
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, maximum: 100 } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Organization" }
+    post:
+      summary: Create an organization (creator becomes its admin/owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug, type]
+              properties:
+                name: { type: string }
+                slug: { type: string, pattern: "^[a-z0-9-]+$" }
+                type: { type: string, enum: [corporate, ngo, auditor] }
+      responses:
+        "200": { description: Created }
+        "409": { description: Slug already taken }
+
+  /organizations/{id}/ngo-profile:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: Get an organization's NGO profile (requires NGO.Profile.Read)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties: { data: { $ref: "#/components/schemas/NgoProfile" } }
+        "403": { description: Missing permission }
+        "404": { description: No profile yet }
+    patch:
+      summary: Create or update an organization's NGO profile (requires NGO.Profile.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legalName]
+              properties:
+                legalName: { type: string }
+                registrationNumber: { type: string }
+                registrationType: { type: string, enum: [trust, society, section8] }
+                pan: { type: string }
+                establishedYear: { type: integer }
+                description: { type: string }
+                website: { type: string, format: uri }
+                headquartersState: { type: string }
+                operatingStates: { type: array, items: { type: string } }
+                causeCategoryKeys: { type: array, items: { type: string } }
+      responses:
+        "200": { description: Upserted }
+
+  /csr-projects:
+    get:
+      summary: List CSR projects for an organization (requires CSR.Project.Read)
+      parameters:
+        - { name: organizationId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [newest, oldest] } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/CsrProject" }
+    post:
+      summary: Create a CSR project (requires CSR.Project.Write on corporateOrgId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [corporateOrgId, csrCategoryKey, title]
+              properties:
+                corporateOrgId: { type: string, format: uuid }
+                ngoProfileId: { type: string, format: uuid }
+                csrCategoryKey: { type: string }
+                title: { type: string }
+                description: { type: string }
+                budgetAmount: { type: number }
+                startDate: { type: string, format: date }
+                endDate: { type: string, format: date }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: Get a CSR project with locations and milestones (requires CSR.Project.Read)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties: { data: { $ref: "#/components/schemas/CsrProject" } }
+    patch:
+      summary: >
+        Update a CSR project (requires CSR.Project.Write; setting status to
+        "approved" additionally requires CSR.Project.Approve)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                budgetAmount: { type: number }
+                status: { type: string, enum: [draft, proposed, approved, active, completed, cancelled] }
+                ngoProfileId: { type: string, format: uuid }
+                startDate: { type: string, format: date }
+                endDate: { type: string, format: date }
+      responses:
+        "200": { description: Updated }
+
+  /verification-requests:
+    get:
+      summary: >
+        List verification requests. For an NGO organization, lists that
+        NGO's own requests (requires NGO.Profile.Read). For an auditor
+        organization, lists the platform-wide review queue (requires
+        Verification.Review).
+      parameters:
+        - { name: organizationId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/VerificationRequest" }
+    post:
+      summary: Submit a verification request for an NGO profile (requires Verification.Submit)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ngoProfileId, organizationId]
+              properties:
+                ngoProfileId: { type: string, format: uuid }
+                organizationId: { type: string, format: uuid, description: "The NGO's own organization" }
+      responses:
+        "200": { description: Created }
+
+  /verification-requests/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: >
+        Review or approve/reject a verification request, acting as an
+        auditor organization. status="in_review" requires
+        Verification.Review; "approved"/"rejected" requires
+        Verification.Approve.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId, status]
+              properties:
+                organizationId: { type: string, format: uuid, description: "The auditor's own organization" }
+                status: { type: string, enum: [in_review, approved, rejected] }
+                reviewNotes: { type: string }
+      responses:
+        "200": { description: Updated }

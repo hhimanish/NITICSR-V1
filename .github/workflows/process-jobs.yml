@@ -1,0 +1,19 @@
+name: Process background jobs
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call internal job processor
+        run: |
+          if [ -z "${{ secrets.APP_URL }}" ] || [ -z "${{ secrets.INTERNAL_JOB_SECRET }}" ]; then
+            echo "APP_URL / INTERNAL_JOB_SECRET repo secrets not set yet — skipping."
+            exit 0
+          fi
+          curl -sf -X POST "${{ secrets.APP_URL }}/api/internal/process-jobs" \
+            -H "x-internal-secret: ${{ secrets.INTERNAL_JOB_SECRET }}"

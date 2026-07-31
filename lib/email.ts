@@ -11,6 +11,15 @@ function getResend() {
 
 const FROM_ADDRESS = process.env.CONTACT_FROM_EMAIL || "NITICSR <onboarding@resend.dev>";
 
+/** Throws if Resend isn't configured or delivery fails — used by the job
+ * queue, which needs a real failure to retry against, unlike the
+ * best-effort contact-form senders below. */
+export async function sendEmail(to: string, subject: string, text: string) {
+  const client = getResend();
+  if (!client) throw new Error("RESEND_API_KEY is not set");
+  await client.emails.send({ from: FROM_ADDRESS, to, subject, text });
+}
+
 /** Best-effort — callers should not fail the request if email delivery fails. */
 export async function sendContactConfirmation(input: LeadInput) {
   const client = getResend();
