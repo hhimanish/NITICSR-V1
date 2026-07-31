@@ -5,6 +5,7 @@ import { z } from "zod";
 import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
 import { buildCopilotMessages, CEREBRAS_MODEL, getCerebrasClient } from "@/lib/cerebras";
 import { getPool } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { requirePermission } from "@/lib/rbac";
 
 const CopilotRequestSchema = z.object({
@@ -12,9 +13,17 @@ const CopilotRequestSchema = z.object({
   question: z.string().min(3).max(500),
 });
 
+const COPILOT_RATE_LIMIT = 20;
+const COPILOT_RATE_WINDOW_MS = 60_000;
+
 export const POST = withApiErrors(async (req: NextRequest) => {
   const { userId } = await auth();
   if (!userId) return apiError(401, "Not authenticated");
+
+  // Keyed by user, not IP — this is authenticated, and a shared office IP
+  // shouldn't throttle every employee together.
+  const rateLimit = checkRateLimit(`copilot:${userId}`, COPILOT_RATE_LIMIT, COPILOT_RATE_WINDOW_MS);
+  if (!rateLimit.allowed) return apiError(429, "Too many questions — please try again shortly.");
 
   const input = CopilotRequestSchema.parse(await req.json());
   // Organization.Read is granted to every seeded role — this is a
@@ -90,8 +99,27 @@ export const POST = withApiErrors(async (req: NextRequest) => {
 
   const answer = completion.choices[0]?.message?.content ?? "I couldn't generate an answer just now.";
 
+  // AI governance trail: every Copilot answer is logged with the model
+  // version and question/answer, so "what did the AI say and on what model"
+  // is auditable later — reuses the same audit_logs table the rest of the
+  // platform's "who did what" trail lives in, rather than a separate store.
+  await pool.query(
+    `INSERT INTO audit_logs (organization_id, action, entity_type, entity_id, metadata)
+     VALUES ($1, 'ai_copilot.answered', 'organization', $1, $2)`,
+    [
+      input.organizationId,
+      JSON.stringify({
+        model: CEREBRAS_MODEL,
+        question: input.question,
+        answer,
+        groundedInProjectCount: context.projects.length,
+      }),
+    ]
+  );
+
   return apiSuccess({
     answer,
+    model: CEREBRAS_MODEL,
     groundedInProjectCount: context.projects.length,
   });
 });

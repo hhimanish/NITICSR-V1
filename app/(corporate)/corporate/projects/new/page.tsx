@@ -66,7 +66,7 @@ export default function NewCsrProjectPage() {
         <div className="space-y-1.5">
           <Label>Cause category</Label>
           <Select value={csrCategoryKey} onValueChange={(v) => v && setCsrCategoryKey(v)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" aria-label="Cause category">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

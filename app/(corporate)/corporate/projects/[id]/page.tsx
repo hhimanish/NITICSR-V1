@@ -66,7 +66,7 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</p>
           <Select value={project.status} onValueChange={(v) => v && handleStatusChange(v)}>
-            <SelectTrigger className="mt-1 w-40" disabled={updating}>
+            <SelectTrigger className="mt-1 w-40" disabled={updating} aria-label="Project status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -106,7 +106,7 @@ export function MatchmakingDemo() {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground">Cause area</label>
               <Select value={causeArea} onValueChange={(v) => v && setCauseArea(v)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-label="Cause area">
                   <SelectValue placeholder="Select a cause" />
                 </SelectTrigger>
                 <SelectContent>
@@ -122,7 +122,7 @@ export function MatchmakingDemo() {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground">State</label>
               <Select value={state} onValueChange={(v) => v && setState(v)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-label="State">
                   <SelectValue placeholder="Select a state" />
                 </SelectTrigger>
                 <SelectContent>
@@ -138,7 +138,7 @@ export function MatchmakingDemo() {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground">Budget band</label>
               <Select value={budgetBand} onValueChange={(v) => v && setBudgetBand(v)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-label="Budget band">
                   <SelectValue placeholder="Select a budget" />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,6 +203,9 @@ export function MatchmakingDemo() {
                   </span>
                 </div>
                 <p className="mt-4 text-sm italic text-foreground/80">&ldquo;{match.rationale}&rdquo;</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  AI-generated rationale, not a verified assessment
+                </p>
               </motion.div>
             ))}
           </AnimatePresence>

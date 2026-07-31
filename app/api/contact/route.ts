@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { saveLead } from "@/lib/db";
 import { sendContactConfirmation, sendInternalNotification } from "@/lib/email";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { ContactFormSchema } from "@/lib/schemas";
 
+const CONTACT_RATE_LIMIT = 5;
+const CONTACT_RATE_WINDOW_MS = 60_000;
+
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit(`contact:${clientIp(req)}`, CONTACT_RATE_LIMIT, CONTACT_RATE_WINDOW_MS);
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Too many submissions — please try again shortly." }, { status: 429 });
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = ContactFormSchema.safeParse(json);
 

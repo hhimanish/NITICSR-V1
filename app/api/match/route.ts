@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { buildMatchMessages, CEREBRAS_MODEL, findDemoNgo, getCerebrasClient } from "@/lib/cerebras";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { MatchRequestSchema, ModelMatchSchema, type MatchResult } from "@/lib/schemas";
 import { createIncrementalObjectParser } from "@/lib/streaming";
 
@@ -9,7 +10,20 @@ function sse(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
+// This is the public, unauthenticated homepage demo — it calls a paid AI
+// API on every request, so it needs abuse protection more than most routes.
+const MATCH_RATE_LIMIT = 10;
+const MATCH_RATE_WINDOW_MS = 60_000;
+
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit(`match:${clientIp(req)}`, MATCH_RATE_LIMIT, MATCH_RATE_WINDOW_MS);
+  if (!rateLimit.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests — please try again shortly." }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": String(Math.ceil((rateLimit.retryAfterMs ?? 60000) / 1000)) },
+    });
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = MatchRequestSchema.safeParse(json);
 

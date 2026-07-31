@@ -56,7 +56,7 @@ export default function CorporateDiscoveryPage() {
 
       <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card p-4">
         <Select value={state} onValueChange={(v) => setState(v ?? "")}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48" aria-label="State">
             <SelectValue placeholder="Any state" />
           </SelectTrigger>
           <SelectContent>
@@ -69,7 +69,7 @@ export default function CorporateDiscoveryPage() {
         </Select>
 
         <Select value={causeCategoryKey} onValueChange={(v) => setCauseCategoryKey(v ?? "")}>
-          <SelectTrigger className="w-56">
+          <SelectTrigger className="w-56" aria-label="Cause area">
             <SelectValue placeholder="Any cause area" />
           </SelectTrigger>
           <SelectContent>

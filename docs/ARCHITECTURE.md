@@ -213,3 +213,48 @@ workflow logic behind it:
   and are premature before there's a security team or real user volume.
 - **Command palette, Gantt/Kanban/calendar views** — no concrete page needs
   them yet; see `docs/DESIGN_SYSTEM.md`.
+
+## Phase 5: production readiness — what's real vs. what's certified
+
+The original Phase 5 brief asked for a full enterprise certification
+program: load testing at up to 10,000 concurrent users, adversarial
+zero-trust penetration testing, mutation testing, blue-green/canary
+deploys, and E2E journeys for features (KYC, escrow release, OCR, PDF
+board-pack export) that don't exist. That's a QA/SRE/security team's
+ongoing program against live infrastructure, not something buildable in a
+session — see ADR 0005 for the general policy this follows.
+
+What shipped instead, real and verified:
+
+- **Security**: a code-level review of every API route (`docs/SECURITY.md`)
+  — not a formal pentest, but real findings (missing rate limiting on two
+  paid, unauthenticated AI endpoints; a non-constant-time secret comparison)
+  with real fixes (`lib/rate-limit.ts`, `crypto.timingSafeEqual`).
+- **Testing**: `lib/rate-limit.test.ts`, `lib/api-utils.test.ts`, and
+  `lib/geo-search.test.ts` (a real integration test against Postgres
+  verifying the Haversine radius search actually includes/excludes/orders
+  correctly) — measured coverage additions, not a claimed percentage.
+- **CI**: `npm audit --audit-level=critical` now runs on every push
+  (blocks only on critical severity — see the policy note in `ci.yml` for
+  why high/moderate transitive advisories in Next's own dependency tree
+  aren't currently blocking).
+- **Performance & accessibility**: a real Lighthouse run against the
+  production build, documented in `docs/PERFORMANCE.md` with actual scores
+  (not asserted targets) — this caught and fixed a genuine accessibility
+  bug (unlabeled `Select` triggers, invisible to screen readers) that
+  automated CI couldn't have caught on its own.
+- **AI governance**: explicit "AI-generated, not verified" labeling on
+  both AI surfaces (Copilot, matchmaking demo), model-version logging into
+  the existing `audit_logs` table for every Copilot answer.
+- **Documentation**: `docs/DEPLOYMENT.md`, `docs/RUNBOOK.md`, and
+  `docs/adr/` (5 ADRs covering the real architectural decisions made across
+  every phase) — accurate because they describe decisions actually made,
+  not a template filled in speculatively.
+
+Deferred, same reasoning as every phase above: load/scale testing (needs a
+live staging environment and a reason to spend money simulating traffic
+that doesn't exist yet), adversarial zero-trust mobile testing (no mobile
+app to attack), mutation testing (marginal value at this codebase's size),
+blue-green/canary deploys and Redis/CDN/autoscaling validation (Render's
+tier and current traffic don't call for it yet), and a formal OWASP
+penetration test (needs a scoped external engagement, not a code review).

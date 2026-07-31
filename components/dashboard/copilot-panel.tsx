@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { useOrg } from "@/components/dashboard/org-context";
 
-type Message = { role: "user" | "assistant"; text: string; groundedInProjectCount?: number };
+type Message = { role: "user" | "assistant"; text: string; groundedInProjectCount?: number; model?: string };
 
 export function CopilotPanel() {
   const org = useOrg();
@@ -44,7 +44,12 @@ export function CopilotPanel() {
 
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: body.data.answer, groundedInProjectCount: body.data.groundedInProjectCount },
+        {
+          role: "assistant",
+          text: body.data.answer,
+          groundedInProjectCount: body.data.groundedInProjectCount,
+          model: body.data.model,
+        },
       ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -68,6 +73,9 @@ export function CopilotPanel() {
         </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4">
+          <p className="rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent-foreground">
+            AI-generated — not independently verified. Cross-check anything before acting on it.
+          </p>
           {messages.length === 0 && (
             <p className="text-sm text-muted-foreground">
               Ask about your own CSR projects and organization data — answers are grounded only in{" "}
@@ -87,6 +95,7 @@ export function CopilotPanel() {
               {m.role === "assistant" && (
                 <p className="text-xs text-muted-foreground">
                   Grounded in {m.groundedInProjectCount ?? 0} of your CSR projects
+                  {m.model && ` · ${m.model}`}
                 </p>
               )}
             </div>
