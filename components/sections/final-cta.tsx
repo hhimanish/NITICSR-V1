@@ -21,8 +21,8 @@ export function FinalCta() {
           across your organization.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button size="lg" variant="secondary" render={<Link href="/contact" />} className="gap-2">
-            Talk to us
+          <Button size="lg" variant="secondary" render={<Link href="/request-demo" />} className="gap-2">
+            Request enterprise demo
             <ArrowRight className="size-4" />
           </Button>
           <Button

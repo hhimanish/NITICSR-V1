@@ -3,11 +3,21 @@ import { ArrowRight, FileLock2, ShieldCheck, Stamp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion/fade-in";
+import { VerificationBadge, type VerificationStatus } from "@/components/design-system/verification-badge";
 
 const points = [
   { icon: ShieldCheck, text: "Registration, 12A/80G, and FCRA status checked before an NGO ever surfaces in a match." },
   { icon: FileLock2, text: "Immutable audit trail for every rupee routed, ready for statutory disclosure." },
   { icon: Stamp, text: "Independent auditor sign-off workflow — coming in a later phase of NITICSR." },
+];
+
+const documents: { label: string; status: VerificationStatus }[] = [
+  { label: "CSR-1", status: "verified" },
+  { label: "80G", status: "verified" },
+  { label: "12A", status: "verified" },
+  { label: "PAN", status: "verified" },
+  { label: "FCRA", status: "pending" },
+  { label: "DARPAN", status: "verified" },
 ];
 
 export function VerificationVaultTeaser() {
@@ -30,6 +40,17 @@ export function VerificationVaultTeaser() {
             Explore the platform
             <ArrowRight className="size-4" />
           </Button>
+
+          <div className="mt-8">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Illustrative document status for a demo NGO profile
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {documents.map((doc) => (
+                <VerificationBadge key={doc.label} label={doc.label} status={doc.status} />
+              ))}
+            </div>
+          </div>
         </FadeIn>
 
         <FadeIn delay={0.15} className="space-y-4">

@@ -39,9 +39,20 @@ const faqs = [
   },
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: { "@type": "Answer", text: faq.answer },
+  })),
+};
+
 export function Faq() {
   return (
     <section className="border-b border-border bg-card py-24">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <FadeIn className="text-center">
           <h2 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">

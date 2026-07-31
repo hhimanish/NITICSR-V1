@@ -1,15 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Menu } from "lucide-react";
+import { Menu, ShieldCheck, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { MegaMenu } from "@/components/design-system/mega-menu";
 import {
   Sheet,
   SheetClose,
@@ -20,29 +15,33 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 
-const solutions = [
+const solutionsColumns = [
   {
-    href: "/solutions/corporate",
-    label: "Corporate CSR",
-    description: "Discover, verify, and fund NGO partners with audit-ready compliance.",
+    heading: "Solutions",
+    items: [
+      { href: "/solutions/corporate", label: "Corporate CSR", description: "Discover, verify, and fund NGO partners." },
+      { href: "/solutions/ngos", label: "NGOs", description: "Get discovered by verified CSR budgets." },
+      { href: "/solutions/auditors", label: "Auditors", description: "Independent verification tooling." },
+    ],
   },
   {
-    href: "/solutions/ngos",
-    label: "NGOs",
-    description: "Get discovered by verified corporate CSR budgets aligned to your cause.",
-  },
-  {
-    href: "/solutions/auditors",
-    label: "Auditors",
-    description: "Independent verification tooling for Schedule VII compliance review.",
+    heading: "Capabilities",
+    items: [
+      { href: "/esg", label: "ESG & Sustainability", description: "SDG alignment grounded in project data." },
+      { href: "/compliance-automation", label: "Compliance Automation", description: "Records structured for CSR-2." },
+      { href: "/ai", label: "AI Capabilities", icon: Sparkles, description: "What's live, in progress, and roadmap." },
+      { href: "/security", label: "Security & Trust", icon: ShieldCheck, description: "Auth, RBAC, and data handling." },
+    ],
   },
 ];
 
+const flatSolutionsLinks = solutionsColumns.flatMap((c) => c.items);
+
 const primaryLinks = [
   { href: "/platform", label: "Platform" },
+  { href: "/resources", label: "Resources" },
+  { href: "/developers", label: "Developers" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/blog", label: "Knowledge Center" },
-  { href: "/about", label: "About" },
 ];
 
 export function SiteHeader() {
@@ -64,24 +63,7 @@ export function SiteHeader() {
             Platform
           </Link>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground data-popup-open:bg-muted data-popup-open:text-foreground">
-              Solutions
-              <ChevronDown className="size-3.5" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-80 p-2">
-              {solutions.map((item) => (
-                <DropdownMenuItem
-                  key={item.href}
-                  render={<Link href={item.href} />}
-                  className="flex-col items-start gap-0.5 rounded-md p-3"
-                >
-                  <span className="text-sm font-medium text-foreground">{item.label}</span>
-                  <span className="text-xs text-muted-foreground">{item.description}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <MegaMenu label="Solutions" columns={solutionsColumns} />
 
           {primaryLinks.slice(1).map((link) => (
             <Link
@@ -102,8 +84,8 @@ export function SiteHeader() {
             NGO login
           </Button>
           <Separator orientation="vertical" className="mx-1 h-6" />
-          <Button size="sm" render={<Link href="/contact" />}>
-            Get started
+          <Button size="sm" render={<Link href="/request-demo" />}>
+            Request demo
           </Button>
         </div>
 
@@ -127,9 +109,9 @@ export function SiteHeader() {
                 </SheetClose>
               ))}
               <p className="px-3 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Solutions
+                Solutions &amp; capabilities
               </p>
-              {solutions.map((item) => (
+              {flatSolutionsLinks.map((item) => (
                 <SheetClose
                   key={item.href}
                   render={<Link href={item.href} />}
@@ -146,7 +128,7 @@ export function SiteHeader() {
               <Button variant="outline" render={<Link href="/ngo" />}>
                 NGO login
               </Button>
-              <Button render={<Link href="/contact" />}>Get started</Button>
+              <Button render={<Link href="/request-demo" />}>Request demo</Button>
             </div>
           </SheetContent>
         </Sheet>

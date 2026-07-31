@@ -16,13 +16,26 @@ const columns = [
       { href: "/solutions/corporate", label: "Corporate CSR" },
       { href: "/solutions/ngos", label: "NGOs" },
       { href: "/solutions/auditors", label: "Auditors" },
+      { href: "/esg", label: "ESG & Sustainability" },
+      { href: "/compliance-automation", label: "Compliance Automation" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { href: "/blog", label: "Knowledge Center" },
+      { href: "/case-studies", label: "Case Studies" },
+      { href: "/resources/product-updates", label: "Product Updates" },
+      { href: "/developers/api-docs", label: "API Documentation" },
     ],
   },
   {
     title: "Company",
     links: [
       { href: "/about", label: "About" },
-      { href: "/blog", label: "Knowledge Center" },
+      { href: "/ai", label: "AI Capabilities" },
+      { href: "/security", label: "Security & Trust" },
+      { href: "/careers", label: "Careers" },
       { href: "/contact", label: "Contact" },
     ],
   },
@@ -31,7 +44,7 @@ const columns = [
     links: [
       { href: "/corporate", label: "Corporate login" },
       { href: "/ngo", label: "NGO login" },
-      { href: "/contact", label: "Talk to us" },
+      { href: "/request-demo", label: "Request demo" },
     ],
   },
 ];
@@ -42,7 +55,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-10 md:grid-cols-6">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-7">
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2 font-heading text-lg font-semibold tracking-tight">
               <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">

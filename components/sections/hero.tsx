@@ -100,12 +100,12 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.65, ease: [0.16, 1, 0.3, 1] }}
           className="mt-10 flex flex-col items-center gap-3 sm:flex-row"
         >
-          <Button size="lg" render={<Link href="#matchmaking" />} className="group gap-2">
-            Try AI matchmaking
+          <Button size="lg" render={<Link href="/request-demo" />} className="group gap-2">
+            Request enterprise demo
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </Button>
-          <Button size="lg" variant="outline" render={<Link href="/contact" />}>
-            Talk to sales
+          <Button size="lg" variant="outline" render={<Link href="/platform" />}>
+            Explore platform
           </Button>
         </motion.div>
       </div>
