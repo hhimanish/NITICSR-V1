@@ -157,10 +157,11 @@ here as the intended extension points, not abandoned:
   data-sharing agreement or compliant verification vendor.
   `verification_checks` already models the interface (`provider`, `status`,
   `result`, `expires_at`) a real integration would fill in.
-- **PostGIS geospatial queries** (radius/polygon search, heatmaps, nearest-NGO)
-  — `project_locations` stores plain `latitude`/`longitude` today; adding a
-  PostGIS `geometry` column and the `postgis` extension is a small additive
-  migration once geo queries are actually needed.
+- **PostGIS geospatial queries** (polygon search, heatmaps) — plain-Haversine
+  radius search over `latitude`/`longitude` is now real (`csr_projects` and
+  `ngo_profiles` both support `lat`/`lng`/`radiusKm`); a PostGIS `geometry`
+  column is only worth adding once polygon queries or heatmap aggregation
+  are actually needed.
 - **pgvector semantic search / embeddings / AI risk scoring** — needs real
   usage data to be meaningful; premature before there's a corpus to embed.
 - **Redis-backed caching** — not provisioned; revisit if the Postgres-backed
@@ -169,3 +170,46 @@ here as the intended extension points, not abandoned:
   today, not multiple services that need decoupling. `audit_logs` and the
   `jobs` table cover the append-only trail and async-processing needs that
   exist right now.
+
+## Phase 4: real workspaces, not just dashboards
+
+Corporate, NGO, and Auditor workspaces (`app/(corporate)`, `app/(ngo)`,
+`app/(auditor)`) are wired to live `/api/v1` data — not placeholder KPI
+tiles. `components/dashboard/org-context.tsx` resolves (or creates) the
+signed-in user's organization of the workspace's type and provides it via
+context, so every page underneath just calls `useOrg()` rather than
+re-implementing onboarding. `components/dashboard/copilot-panel.tsx` exposes
+a real Cerebras-backed AI Copilot (`/api/copilot`) grounded only in the
+caller's own organization's records — no cross-tenant data ever enters the
+prompt, and the model is instructed to say so rather than guess when the
+data doesn't answer the question.
+
+The original Phase 4 brief asked for a much larger surface — a full
+"Enterprise Digital Operating Layer" with Executive Command Center, Board/
+ESG/Finance/Legal/Consultant/Government workspaces, a configurable workflow
+engine, and an offline-capable auditor mobile PWA with device attestation.
+That's deferred for the same reason as the Phase 2 items above — building
+shallow versions of all of it now would mean UI with no real data or
+workflow logic behind it:
+
+- **Government/Board/ESG/Finance/Legal/Consultant workspaces as separate
+  surfaces** — the underlying data (SDG mapping, CSR categories, verification
+  status) already exists and is queryable via `/api/v1`; these are read-only
+  views over the same tables, best built once there's a specific stakeholder
+  asking for one, not speculatively.
+- **Offline auditor PWA** (GPS geofencing, camera-only capture, perceptual
+  hash duplicate detection, offline sync) — same blocker as the Zero-Trust
+  Audit Engine above: needs a real mobile app / service-worker + camera
+  pipeline that doesn't exist yet. The Auditor Workspace built here is a
+  real, functional desktop review queue instead.
+- **Configurable workflow engine** (conditional routing, SLA timers,
+  escalation chains) — legitimate as its own subsystem once there are enough
+  distinct approval flows to justify generalizing beyond the direct
+  `status` transitions already implemented on `csr_projects` and
+  `verification_requests`.
+- **MFA, ABAC, distributed tracing, secrets management** — MFA is a Clerk
+  dashboard toggle away when wanted; ABAC/tracing/secrets-management each
+  need a tooling decision (which APM? which secrets manager?) not made yet,
+  and are premature before there's a security team or real user volume.
+- **Command palette, Gantt/Kanban/calendar views** — no concrete page needs
+  them yet; see `docs/DESIGN_SYSTEM.md`.

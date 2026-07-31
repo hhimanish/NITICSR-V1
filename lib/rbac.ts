@@ -49,6 +49,24 @@ export async function can(clerkUserId: string, organizationId: string, permissio
   return rows.length > 0;
 }
 
+/** For cross-tenant read endpoints (e.g. browsing the NGO directory) where
+ * there's no single "acting organization" — grants access if the user holds
+ * the permission in ANY organization they belong to. */
+export async function hasAnyPermission(clerkUserId: string, permission: Permission) {
+  const { rows } = await getPool().query(
+    `SELECT 1
+       FROM organization_members om
+       JOIN users u ON u.id = om.user_id
+       JOIN role_permissions rp ON rp.role_id = om.role_id
+       JOIN permissions p ON p.id = rp.permission_id
+      WHERE u.clerk_user_id = $1
+        AND p.key = $2
+      LIMIT 1`,
+    [clerkUserId, permission]
+  );
+  return rows.length > 0;
+}
+
 /** Throws ForbiddenError if the check fails — convenient for route handlers
  * that want a single early-return guard clause. */
 export async function requirePermission(

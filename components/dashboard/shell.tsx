@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { CopilotPanel } from "@/components/dashboard/copilot-panel";
 import type { DashboardNavItem } from "@/components/dashboard/nav-data";
 
 const iconByHref: Record<string, LucideIcon> = {
@@ -27,6 +28,7 @@ const iconByHref: Record<string, LucideIcon> = {
   "/ngo/matches": Search,
   "/ngo/verification": FileCheck2,
   "/ngo/settings": Settings,
+  "/auditor": LayoutDashboard,
 };
 
 function NavLinks({ navItems, onNavigate }: { navItems: DashboardNavItem[]; onNavigate?: boolean }) {
@@ -71,7 +73,7 @@ export function DashboardShell({
   navItems,
   children,
 }: {
-  portal: "Corporate" | "NGO";
+  portal: "Corporate" | "NGO" | "Auditor";
   navItems: DashboardNavItem[];
   children: React.ReactNode;
 }) {
@@ -111,7 +113,10 @@ export function DashboardShell({
             </Sheet>
             <span className="text-sm font-medium text-muted-foreground">{portal} workspace</span>
           </div>
-          <UserButton />
+          <div className="flex items-center gap-2">
+            <CopilotPanel />
+            <UserButton />
+          </div>
         </header>
 
         <main className="flex-1 p-6">{children}</main>

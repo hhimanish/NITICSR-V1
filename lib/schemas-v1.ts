@@ -25,6 +25,8 @@ export const UpdateNgoProfileSchema = z.object({
   headquartersState: z.string().max(100).optional(),
   operatingStates: z.array(z.string()).max(40).optional(),
   causeCategoryKeys: z.array(z.string()).max(20).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 });
 
 export type UpdateNgoProfileInput = z.infer<typeof UpdateNgoProfileSchema>;

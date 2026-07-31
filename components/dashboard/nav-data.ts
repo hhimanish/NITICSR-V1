@@ -16,3 +16,5 @@ export const ngoNav: DashboardNavItem[] = [
   { href: "/ngo/verification", label: "Verification" },
   { href: "/ngo/settings", label: "Settings" },
 ];
+
+export const auditorNav: DashboardNavItem[] = [{ href: "/auditor", label: "Review Queue" }];

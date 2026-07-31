@@ -67,6 +67,26 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /ngo-profiles:
+    get:
+      summary: >
+        Browse the NGO directory (requires NGO.Profile.Read in any
+        organization you belong to — this is a cross-tenant read, not
+        scoped to a single acting organization).
+      description: >
+        Supports the same optional lat/lng/radiusKm Haversine radius search
+        as GET /csr-projects, plus state and causeCategoryKey filters.
+      parameters:
+        - { name: state, in: query, schema: { type: string } }
+        - { name: causeCategoryKey, in: query, schema: { type: string } }
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: lng, in: query, schema: { type: number } }
+        - { name: radiusKm, in: query, schema: { type: number } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: OK }
+
   /organizations:
     get:
       summary: List organizations the current user belongs to

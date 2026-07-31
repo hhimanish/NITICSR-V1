@@ -44,6 +44,7 @@ const columns = [
     links: [
       { href: "/corporate", label: "Corporate login" },
       { href: "/ngo", label: "NGO login" },
+      { href: "/auditor", label: "Auditor login" },
       { href: "/request-demo", label: "Request demo" },
     ],
   },

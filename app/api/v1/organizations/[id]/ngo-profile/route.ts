@@ -46,8 +46,9 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
     const upsertResult = await client.query(
       `INSERT INTO ngo_profiles (
          organization_id, legal_name, registration_number, registration_type,
-         pan, established_year, description, website, headquarters_state, operating_states
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         pan, established_year, description, website, headquarters_state, operating_states,
+         latitude, longitude
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        ON CONFLICT (organization_id) DO UPDATE SET
          legal_name = EXCLUDED.legal_name,
          registration_number = COALESCE(EXCLUDED.registration_number, ngo_profiles.registration_number),
@@ -57,7 +58,9 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
          description = COALESCE(EXCLUDED.description, ngo_profiles.description),
          website = COALESCE(EXCLUDED.website, ngo_profiles.website),
          headquarters_state = COALESCE(EXCLUDED.headquarters_state, ngo_profiles.headquarters_state),
-         operating_states = COALESCE(EXCLUDED.operating_states, ngo_profiles.operating_states)
+         operating_states = COALESCE(EXCLUDED.operating_states, ngo_profiles.operating_states),
+         latitude = COALESCE(EXCLUDED.latitude, ngo_profiles.latitude),
+         longitude = COALESCE(EXCLUDED.longitude, ngo_profiles.longitude)
        RETURNING id`,
       [
         organizationId,
@@ -70,6 +73,8 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
         input.website || null,
         input.headquartersState ?? null,
         input.operatingStates ?? null,
+        input.latitude ?? null,
+        input.longitude ?? null,
       ]
     );
     const ngoProfileId = upsertResult.rows[0].id;
