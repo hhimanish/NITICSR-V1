@@ -29,7 +29,11 @@ export const GET = withApiErrors(async (req: NextRequest, ctx: RouteContext) => 
     `SELECT p.*,
             c.key AS csr_category_key,
             (SELECT json_agg(pl) FROM project_locations pl WHERE pl.csr_project_id = p.id) AS locations,
-            (SELECT json_agg(m) FROM milestones m WHERE m.csr_project_id = p.id) AS milestones
+            (SELECT json_agg(m) FROM milestones m WHERE m.csr_project_id = p.id) AS milestones,
+            (SELECT json_agg(b) FROM beneficiaries b WHERE b.csr_project_id = p.id) AS beneficiaries,
+            (SELECT json_agg(json_build_object('id', s.id, 'name', s.name, 'colorHex', s.color_hex))
+               FROM project_sdgs ps JOIN sdgs s ON s.id = ps.sdg_id
+              WHERE ps.csr_project_id = p.id) AS sdgs
        FROM csr_projects p
        JOIN csr_categories c ON c.id = p.csr_category_id
       WHERE p.id = $1 AND p.deleted_at IS NULL`,

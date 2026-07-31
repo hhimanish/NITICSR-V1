@@ -37,9 +37,17 @@ export const metadata: Metadata = {
     locale: "en_IN",
     type: "website",
   },
-  alternates: {
-    canonical: "/",
+  twitter: {
+    card: "summary_large_image",
+    title: "NITICSR — India's Enterprise CSR Operating System",
+    description:
+      "Verified impact. Absolute compliance. AI-matched NGO discovery, verification, and Schedule VII compliance in one platform.",
   },
+  // Deliberately no site-wide `alternates.canonical` here — Next.js metadata
+  // is shallow-merged per top-level key, so a blanket canonical at the root
+  // gets inherited verbatim by every page that doesn't set its own,
+  // wrongly telling crawlers every page is a duplicate of "/". Pages that
+  // need one (blog posts, case studies) set it themselves.
 };
 
 const organizationJsonLd = {

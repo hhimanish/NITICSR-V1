@@ -56,6 +56,29 @@ export const UpdateCsrProjectSchema = z.object({
 
 export type UpdateCsrProjectInput = z.infer<typeof UpdateCsrProjectSchema>;
 
+export const SetProjectSdgsSchema = z.object({
+  sdgIds: z.array(z.number().int().min(1).max(17)).max(17),
+});
+
+export type SetProjectSdgsInput = z.infer<typeof SetProjectSdgsSchema>;
+
+export const CreateProjectLocationSchema = z.object({
+  state: z.string().min(1).max(100),
+  district: z.string().max(100).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+});
+
+export type CreateProjectLocationInput = z.infer<typeof CreateProjectLocationSchema>;
+
+export const CreateBeneficiarySchema = z.object({
+  category: z.string().min(1).max(100),
+  countEstimate: z.number().int().nonnegative().optional(),
+  demographicNotes: z.string().max(1000).optional(),
+});
+
+export type CreateBeneficiaryInput = z.infer<typeof CreateBeneficiarySchema>;
+
 export const CreateVerificationRequestSchema = z.object({
   ngoProfileId: z.string().uuid(),
   organizationId: z.string().uuid(),

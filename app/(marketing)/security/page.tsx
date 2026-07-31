@@ -12,6 +12,7 @@ export default function SecurityPage() {
   return (
     <SolutionPage
       data={{
+        breadcrumbs: [{ label: "Security & Trust", href: "/security" }],
         eyebrow: "Security & Trust",
         title: "Built with permission boundaries from the ground up",
         description:

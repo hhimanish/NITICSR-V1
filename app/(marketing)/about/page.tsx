@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/design-system/breadcrumbs";
 import { FadeIn } from "@/components/motion/fade-in";
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
+      <Breadcrumbs items={[{ label: "About", href: "/about" }]} />
       <section className="border-b border-border bg-card py-20 sm:py-28">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <FadeIn>

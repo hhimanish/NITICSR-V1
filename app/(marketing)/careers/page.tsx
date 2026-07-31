@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Compass, Layers, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/design-system/breadcrumbs";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger-reveal";
 
@@ -20,6 +21,7 @@ const values = [
 export default function CareersPage() {
   return (
     <section className="py-20 sm:py-28">
+      <Breadcrumbs items={[{ label: "Careers", href: "/careers" }]} />
       <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
         <FadeIn>
           <h1 className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">Careers at NITICSR</h1>

@@ -6,6 +6,11 @@ generic template. See `docs/DEPLOYMENT.md` for setup and
 
 ## Site is down / 500s on every page
 
+0. Check `GET /api/health` first — it checks Postgres connectivity
+   specifically (`{"status":"ok","database":"ok"}` vs. a `503`) and is
+   also what Render's own health check hits before routing traffic to a
+   new deploy, so a failing deploy and a failing `/api/health` usually
+   have the same root cause.
 1. Check Render's deploy log for the web service — a failed build often
    means a missing/misconfigured env var (see the `NODE_ENV` pitfall in
    `docs/DEPLOYMENT.md`) or a migration that hasn't been run yet against a

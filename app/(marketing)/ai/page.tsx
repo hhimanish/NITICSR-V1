@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, BrainCircuit, MessageSquareText, ScanSearch, ShieldCheck, Sparkles, Waypoints } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/design-system/breadcrumbs";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger-reveal";
 import { FinalCta } from "@/components/sections/final-cta";
@@ -42,6 +43,7 @@ const capabilities = [
 export default function AiPage() {
   return (
     <>
+      <Breadcrumbs items={[{ label: "AI Capabilities", href: "/ai" }]} />
       <section className="border-b border-border bg-card py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <FadeIn>

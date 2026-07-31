@@ -251,6 +251,62 @@ paths:
       responses:
         "200": { description: Updated }
 
+  /csr-projects/{id}/sdgs:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    put:
+      summary: Replace a project's SDG mapping (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sdgIds]
+              properties:
+                sdgIds: { type: array, items: { type: integer, minimum: 1, maximum: 17 } }
+      responses:
+        "200": { description: Replaced }
+
+  /csr-projects/{id}/locations:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: Add a project location (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              properties:
+                state: { type: string }
+                district: { type: string }
+                latitude: { type: number }
+                longitude: { type: number }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/beneficiaries:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: Add a beneficiary group to a project (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category]
+              properties:
+                category: { type: string }
+                countEstimate: { type: integer, minimum: 0 }
+                demographicNotes: { type: string }
+      responses:
+        "200": { description: Created }
+
   /verification-requests:
     get:
       summary: >

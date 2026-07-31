@@ -258,3 +258,83 @@ app to attack), mutation testing (marginal value at this codebase's size),
 blue-green/canary deploys and Redis/CDN/autoscaling validation (Render's
 tier and current traffic don't call for it yet), and a formal OWASP
 penetration test (needs a scoped external engagement, not a code review).
+
+## Phase 6: domain map and platform completion
+
+The Phase 6 brief asked for a formal domain-driven re-architecture (17
+bounded contexts, each with its own APIs/events/data), a visual business
+rules engine, a workflow orchestration engine, a knowledge graph, and
+multi-tenant white-labeling with custom domains. None of that was built —
+see ADR 0005. A mechanical re-architecture of a single app with ~15 tables
+into 17 "services" would add indirection without adding capability; a
+generic rules/workflow engine is worth building once there are enough
+concrete rules to justify generalizing (right now there's exactly the ad
+hoc logic already in the Corporate Compliance page and the `status`
+transitions on `csr_projects`/`verification_requests`).
+
+What Phase 6 actually is: the domain map the code already has (proving the
+"bounded context" thinking was already present, just not formalized into
+separate services), plus finishing four things Phase 2-5 left as unused
+schema or missing pieces rather than adding new speculative architecture.
+
+### Domain map (already true today, not aspirational)
+
+| Bounded context (brief's language) | What owns it today |
+|---|---|
+| Identity & Access | Clerk (identity) + `lib/rbac.ts` (authorization) + `users`/`organization_members` |
+| Organization Management | `organizations` table + `/api/v1/organizations` |
+| Corporate CSR / NGO Lifecycle | `ngo_profiles`, `/api/v1/organizations/:id/ngo-profile`, `/api/v1/ngo-profiles` |
+| Project Portfolio | `csr_projects`, `project_locations`, `project_sdgs`, `beneficiaries`, `milestones`, `/api/v1/csr-projects/**` |
+| Audit & Assurance | `verification_requests`/`verification_checks`, the Auditor Workspace review queue |
+| Compliance | `csr_categories` (Schedule VII), the Corporate Compliance page's gap checks |
+| Documents | `ngo_documents` (schema only — no upload pipeline yet, see below) |
+| Notifications | `lib/notifications.ts` + `notifications` table |
+| AI Services | `lib/cerebras.ts`, `/api/match`, `/api/copilot` |
+| GIS | `lib/rate-limit.ts`'s neighbor, the Haversine radius search in `csr-projects`/`ngo-profiles` routes |
+| Reporting/Analytics | Corporate dashboard KPIs, Executive Analytics preview (still illustrative on the public site) |
+| Integration Hub | `docs/openapi.yaml` (the interface); no external adapters yet |
+| Administration | `feature_flags` (now wired, see below), `audit_logs` |
+| Scheduler | `lib/jobs.ts` + the GitHub Actions cron |
+| Configuration/Feature Flags | `lib/feature-flags.ts` (new this phase) |
+
+### Completed this phase (finishing existing schema, not new scope)
+
+- **Digital twin fields surfaced**: `project_sdgs`, `project_locations`,
+  and `beneficiaries` existed since Phase 2's schema but had no API or UI.
+  `GET /api/v1/csr-projects/:id` now returns them; `PUT .../sdgs`,
+  `POST .../locations`, and `POST .../beneficiaries` manage them; the
+  Corporate project detail page has a compact SDG toggle picker and
+  location/beneficiary add forms.
+- **Feature flags, for real**: `feature_flags` existed since Phase 2 with
+  zero code reading it. `lib/feature-flags.ts` + a seeded `ai_copilot`
+  flag now actually gates the Copilot panel — a real usage, not a stub.
+- **Health check**: `GET /api/health` checks Postgres connectivity
+  specifically; `render.yaml`'s `healthCheckPath` now points at it instead
+  of `/`, so a DB outage is caught before Render routes traffic to a
+  broken deploy.
+- **SEO completion**: fixed a real bug — the root layout set a blanket
+  `alternates.canonical: "/"`, which (since Next.js metadata merges
+  shallowly per key) every other page silently inherited, telling
+  crawlers every single page was a duplicate of the homepage. Removed;
+  blog posts and case studies now set their own correct canonical.
+  Added site-wide Twitter Card metadata (previously only Open Graph was
+  set) and breadcrumbs to every remaining marketing page that lacked them.
+
+### Deferred, same policy as every phase above
+
+- **Domain-driven microservice refactor / event bus** — one app, no team
+  boundaries to enforce; the domain map above shows the separation already
+  exists logically without the operational cost of real service boundaries.
+- **Business rules engine / workflow orchestration engine** — generalize
+  once there are 5+ concrete rules needing it, not before.
+- **Knowledge graph / pgvector semantic search** — still needs a real
+  content corpus (same blocker as Phase 2).
+- **Multi-tenant white-label, custom domains, OAuth2/OIDC server, SDKs** —
+  no current customer or third-party integrator has asked for any of these.
+- **ERP/HRMS/CRM/payment/BI integration adapters** — no partner accounts.
+- **Document management (OCR, digital signatures, duplicate detection)** —
+  there is no file upload pipeline at all yet (`ngo_documents.file_url` is
+  just a text field); building document *management* before document
+  *upload* exists is backwards.
+- **Unified SMS/WhatsApp/push messaging, mobile offline** — same blockers
+  as Phase 2/4 (no provider accounts, no mobile app).

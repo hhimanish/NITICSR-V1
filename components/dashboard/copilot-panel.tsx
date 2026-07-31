@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Send, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,16 @@ export function CopilotPanel() {
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Real feature-flag usage: gates the whole panel, not just cosmetic —
+  // see lib/feature-flags.ts and db/migrations/010_feature_flags_seed.sql.
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/v1/feature-flags?key=ai_copilot&organizationId=${org.id}`)
+      .then((r) => r.json())
+      .then((body) => setEnabled(body.data?.enabled ?? true))
+      .catch(() => setEnabled(true));
+  }, [org.id]);
 
   async function handleAsk(e: React.FormEvent) {
     e.preventDefault();
@@ -57,6 +67,8 @@ export function CopilotPanel() {
       setLoading(false);
     }
   }
+
+  if (!enabled) return null;
 
   return (
     <Sheet>
