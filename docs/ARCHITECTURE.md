@@ -338,3 +338,84 @@ schema or missing pieces rather than adding new speculative architecture.
   *upload* exists is backwards.
 - **Unified SMS/WhatsApp/push messaging, mobile offline** — same blockers
   as Phase 2/4 (no provider accounts, no mobile app).
+
+## ERT 1: Governance OS — what's real vs. what needs a real board
+
+The brief asked for a full board-governance/GRC platform: 24 aggregates
+(Board, Board Member, Committee, Meeting, Agenda, Resolution, Vote,
+Approval Workflow, Escalation, SLA, ...), a visual drag-and-drop workflow
+builder, a no-code business rules engine, digital board packs with PDF
+export, meeting management, MFA/SAML/OIDC SSO, ABAC, digital signatures.
+
+Most of this was deferred, for a sharper reason than "too big" (see
+ADR 0005): modeling Board/Committee/Meeting/Voting mechanics for a board
+that doesn't exist isn't a scoped-down version of the real thing, it's a
+guess at parliamentary procedure with no real body to design against —
+worse than not building it, because it risks locking in the wrong shape
+for how an actual board runs (quorum rules, proxy voting, resolution
+numbering conventions all vary by company and would need to be reverse-
+engineered from a real one). Same logic for the workflow builder and
+rules engine (Phase 6 already deferred these — still no concrete backlog
+of rules/workflows to generalize from) and for MFA/SAML/OIDC/ABAC/digital
+signatures (no enterprise customer's IdP or compliance mandate to build
+against yet).
+
+What ERT 1 actually built: the governance primitives that *do* have real
+backing today — every approval action already in the system (project
+approval, verification approval/rejection) — wrapped with an audit trail,
+delegation, and policy management, plus surfacing the resulting signals
+on dashboards.
+
+### Completed this ERT
+
+- **Immutable governance decision log**: `governance_decisions`
+  (append-only, no update/delete path) records who decided what and why.
+  `lib/governance.ts`'s `recordDecision()` is called from the existing
+  CSR project approval and verification request approve/reject handlers —
+  it wraps real decisions already happening, not a new decision type.
+  `GET /api/v1/governance/decisions` (requires `Governance.Decision.Read`)
+  exposes the log.
+- **Time-bounded delegation of authority**: `delegations` table + `can()`
+  in `lib/rbac.ts` now falls back to an active (unrevoked, in-window)
+  delegation when a direct role-permission check fails. A delegator can
+  only delegate a permission they themselves hold (checked server-side
+  before insert, so delegation can't be used to escalate privilege), and
+  only to a fellow org member. `POST/GET /api/v1/delegations`,
+  `PATCH /api/v1/delegations/:id` to revoke. This is built entirely on
+  the existing RBAC model (ADR 0004) — no new authorization system.
+- **Versioned policy repository**: `governance_policies` (draft → active
+  → superseded → retired, version auto-increments on content edits) +
+  `policy_acknowledgements` for read-receipts. Full CRUD under
+  `/api/v1/governance/policies` plus an acknowledge endpoint. This is the
+  real, buildable slice of "policy management" from the brief — a
+  document with versions and read-receipts, not a rules engine.
+  `lib/cerebras.ts`'s AI Copilot now cites active policies by title when
+  asked policy questions, an incremental extension of the existing
+  org-scoped Copilot rather than a new "Governance Copilot" surface.
+- **Overdue/SLA signal on existing approvals**: rather than a generic SLA
+  engine, a fixed threshold (14 days for CSR project proposals, 7 days for
+  verification requests) surfaces an "Overdue" badge on the Corporate and
+  Auditor dashboards, computed client-side from data already fetched — no
+  new schema.
+- **Governance dashboard**: Corporate dashboard gained "Overdue proposals"
+  and "Decisions (30d)" KPI tiles and a `/corporate/governance` page
+  (policies, delegations, decision log) — all reading real data, none of
+  it illustrative.
+- **Dark mode toggle**: `.dark` CSS tokens existed since Phase 1 but had
+  no UI control. Added a no-flash inline script in `app/layout.tsx` and
+  `components/site/theme-toggle.tsx`, wired into both the public site
+  header and the dashboard shell.
+
+### Deferred, same policy as every phase above
+
+- **Board/Board Member/Committee/Meeting/Agenda/Resolution/Vote
+  aggregates** — no real board to design the mechanics against; see
+  above.
+- **Visual workflow builder / business rules engine** — still no
+  concrete backlog of rules to generalize from (Phase 6 deferral stands).
+- **Digital board packs with PDF export, governance calendar, enterprise
+  search** — downstream of the board/meeting domain that was deferred.
+- **MFA/SAML/OIDC SSO, ABAC, digital signatures** — no enterprise
+  customer's identity provider or compliance mandate to build against.
+- **Unified Teams/Slack/SMS notifications** — same provider-account
+  blocker as Phase 2/4/6.

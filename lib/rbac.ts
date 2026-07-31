@@ -22,6 +22,10 @@ export const PERMISSIONS = [
   "Audit.Submit",
   "Audit.Approve",
   "Corporate.Approve",
+  "Governance.Policy.Read",
+  "Governance.Policy.Write",
+  "Governance.Decision.Read",
+  "Governance.Delegation.Manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -46,7 +50,24 @@ export async function can(clerkUserId: string, organizationId: string, permissio
       LIMIT 1`,
     [clerkUserId, organizationId, permission]
   );
-  return rows.length > 0;
+  if (rows.length > 0) return true;
+
+  // Time-bounded delegation: a member can grant one of their own
+  // permissions to a colleague for a window (e.g. covering for leave)
+  // without a role change. See db/migrations/011_governance.sql.
+  const { rows: delegated } = await getPool().query(
+    `SELECT 1
+       FROM delegations d
+       JOIN users u ON u.id = d.delegate_user_id
+      WHERE u.clerk_user_id = $1
+        AND d.organization_id = $2
+        AND d.permission_key = $3
+        AND d.revoked_at IS NULL
+        AND now() BETWEEN d.starts_at AND d.ends_at
+      LIMIT 1`,
+    [clerkUserId, organizationId, permission]
+  );
+  return delegated.length > 0;
 }
 
 /** For cross-tenant read endpoints (e.g. browsing the NGO directory) where

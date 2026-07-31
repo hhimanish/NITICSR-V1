@@ -67,6 +67,120 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /governance/decisions:
+    get:
+      summary: List the immutable governance decision log (requires Governance.Decision.Read)
+      parameters:
+        - { name: organizationId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: OK }
+
+  /governance/policies:
+    get:
+      summary: List an organization's governance policies (requires Governance.Policy.Read)
+      parameters:
+        - { name: organizationId, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Create a draft policy (requires Governance.Policy.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId, title, content]
+              properties:
+                organizationId: { type: string, format: uuid }
+                title: { type: string }
+                category: { type: string }
+                content: { type: string }
+                effectiveDate: { type: string, format: date }
+                reviewDate: { type: string, format: date }
+      responses:
+        "200": { description: Created }
+
+  /governance/policies/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: Get a policy (requires Governance.Policy.Read)
+      responses:
+        "200": { description: OK }
+    patch:
+      summary: >
+        Update a policy (requires Governance.Policy.Write). Editing content
+        increments its version number.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                category: { type: string }
+                content: { type: string }
+                status: { type: string, enum: [draft, active, superseded, retired] }
+                effectiveDate: { type: string, format: date }
+                reviewDate: { type: string, format: date }
+      responses:
+        "200": { description: Updated }
+
+  /governance/policies/{id}/acknowledge:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: Record the caller's acknowledgement of a policy (requires Governance.Policy.Read)
+      responses:
+        "200": { description: Acknowledged }
+
+  /delegations:
+    get:
+      summary: List delegations for an organization (requires Organization.Read)
+      parameters:
+        - { name: organizationId, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Delegate one of your own permissions to a colleague for a time
+        window (requires Governance.Delegation.Manage; you must already
+        hold the permission being delegated).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId, delegateUserId, permissionKey, endsAt]
+              properties:
+                organizationId: { type: string, format: uuid }
+                delegateUserId: { type: string, format: uuid }
+                permissionKey: { type: string }
+                endsAt: { type: string, format: date-time }
+      responses:
+        "200": { description: Created }
+
+  /delegations/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Revoke a delegation (requires Governance.Delegation.Manage)
+      responses:
+        "200": { description: Revoked }
+
+  /organizations/{id}/members:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List an organization's members (requires Organization.Read)
+      responses:
+        "200": { description: OK }
+
   /ngo-profiles:
     get:
       summary: >

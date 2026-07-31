@@ -64,22 +64,28 @@ export type CopilotContext = {
   organizationType: string;
   projects: { id: string; title: string; status: string; budgetAmount: number | null; category: string }[];
   ngoProfile?: { legalName: string; operatingStates: string[]; causeAreas: string[] } | null;
+  policies?: { title: string; category: string; effectiveDate: string | null }[];
 };
 
 /** Grounds every answer in the caller's own org data only — no cross-tenant
  * context is ever included, and the model is told not to answer beyond it. */
 export function buildCopilotMessages(question: string, context: CopilotContext) {
   const system = `You are the NITICSR AI Copilot, answering questions for a single organization
-about its own CSR data on the platform. You are given that organization's own records only.
+about its own CSR data and governance policies on the platform. You are given that
+organization's own records only.
 
 Rules:
 - Answer ONLY using the provided data. If the data doesn't contain the answer, say so plainly —
-  never guess or invent figures, NGO names, or project details.
+  never guess or invent figures, NGO names, project details, or policy contents.
 - Be concise: 2-4 sentences, or a short list for multi-item answers.
-- Do not discuss other organizations' data — you were not given any.`;
+- Do not discuss other organizations' data — you were not given any.
+- When asked about policy, cite the policy title you're drawing from.`;
 
   const user = `Organization: ${context.organizationName} (${context.organizationType})
 ${context.ngoProfile ? `NGO profile: ${JSON.stringify(context.ngoProfile)}\n` : ""}
+Active governance policies (${context.policies?.length ?? 0}):
+${JSON.stringify(context.policies ?? [], null, 2)}
+
 CSR projects (${context.projects.length}):
 ${JSON.stringify(context.projects, null, 2)}
 

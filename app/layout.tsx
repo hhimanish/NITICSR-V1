@@ -88,6 +88,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Sets .dark before paint to avoid a flash of the wrong theme —
+            can't wait for React hydration since that runs after first paint. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className={`${fontSans.variable} ${fontMono.variable} ${fontNumeric.variable} antialiased`}
       >

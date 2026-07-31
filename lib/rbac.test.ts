@@ -58,4 +58,48 @@ describe.skipIf(!hasDb)("rbac.can (integration)", () => {
       await can(clerkUserId, "00000000-0000-0000-0000-000000000000", "CSR.Project.Read")
     ).toBe(false);
   });
+
+  describe("delegation", () => {
+    const delegateClerkId = `test_delegate_${suffix}`;
+    let delegateUserId: string;
+    let delegationId: string;
+
+    beforeAll(async () => {
+      const pool = getPool();
+      const result = await pool.query(
+        `INSERT INTO users (clerk_user_id, email) VALUES ($1, $2) RETURNING id`,
+        [delegateClerkId, `rbac-delegate-${suffix}@example.com`]
+      );
+      delegateUserId = result.rows[0].id;
+      // Deliberately NOT added to organization_members — access must come
+      // entirely from the delegation, proving it doesn't require membership.
+
+      const delegation = await pool.query(
+        `INSERT INTO delegations (organization_id, delegator_user_id, delegate_user_id, permission_key, ends_at)
+         VALUES ($1, $2, $3, 'CSR.Project.Read', now() + interval '1 hour') RETURNING id`,
+        [organizationId, userId, delegateUserId]
+      );
+      delegationId = delegation.rows[0].id;
+    });
+
+    afterAll(async () => {
+      const pool = getPool();
+      await pool.query(`DELETE FROM delegations WHERE id = $1`, [delegationId]);
+      await pool.query(`DELETE FROM users WHERE id = $1`, [delegateUserId]);
+    });
+
+    it("grants access via an active delegation with no direct membership", async () => {
+      expect(await can(delegateClerkId, organizationId, "CSR.Project.Read")).toBe(true);
+    });
+
+    it("does not grant a permission outside the delegated one", async () => {
+      expect(await can(delegateClerkId, organizationId, "CSR.Project.Write")).toBe(false);
+    });
+
+    it("stops granting access once revoked", async () => {
+      const pool = getPool();
+      await pool.query(`UPDATE delegations SET revoked_at = now() WHERE id = $1`, [delegationId]);
+      expect(await can(delegateClerkId, organizationId, "CSR.Project.Read")).toBe(false);
+    });
+  });
 });

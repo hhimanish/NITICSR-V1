@@ -49,6 +49,15 @@ export const POST = withApiErrors(async (req: NextRequest) => {
     [input.organizationId]
   );
 
+  const { rows: policyRows } = await pool.query(
+    `SELECT title, category, effective_date
+       FROM governance_policies
+      WHERE organization_id = $1 AND status = 'active'
+      ORDER BY created_at DESC
+      LIMIT 10`,
+    [input.organizationId]
+  );
+
   let ngoProfile = null;
   if (isNgo) {
     const { rows } = await pool.query(
@@ -88,6 +97,11 @@ export const POST = withApiErrors(async (req: NextRequest) => {
       category: p.category,
     })),
     ngoProfile,
+    policies: policyRows.map((p) => ({
+      title: p.title as string,
+      category: p.category as string,
+      effectiveDate: p.effective_date as string | null,
+    })),
   };
 
   const completion = await cerebras.chat.completions.create({

@@ -52,6 +52,7 @@ export const UpdateCsrProjectSchema = z.object({
   ngoProfileId: z.string().uuid().optional(),
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
+  rationale: z.string().max(1000).optional(),
 });
 
 export type UpdateCsrProjectInput = z.infer<typeof UpdateCsrProjectSchema>;
@@ -93,3 +94,34 @@ export const ReviewVerificationRequestSchema = z.object({
 });
 
 export type ReviewVerificationRequestInput = z.infer<typeof ReviewVerificationRequestSchema>;
+
+export const CreateDelegationSchema = z.object({
+  organizationId: z.string().uuid(),
+  delegateUserId: z.string().uuid(),
+  permissionKey: z.string().min(1),
+  endsAt: z.string().datetime(),
+});
+
+export type CreateDelegationInput = z.infer<typeof CreateDelegationSchema>;
+
+export const CreatePolicySchema = z.object({
+  organizationId: z.string().uuid(),
+  title: z.string().min(2).max(200),
+  category: z.string().max(100).optional(),
+  content: z.string().min(1).max(20000),
+  effectiveDate: z.string().date().optional(),
+  reviewDate: z.string().date().optional(),
+});
+
+export type CreatePolicyInput = z.infer<typeof CreatePolicySchema>;
+
+export const UpdatePolicySchema = z.object({
+  title: z.string().min(2).max(200).optional(),
+  category: z.string().max(100).optional(),
+  content: z.string().min(1).max(20000).optional(),
+  status: z.enum(["draft", "active", "superseded", "retired"]).optional(),
+  effectiveDate: z.string().date().optional(),
+  reviewDate: z.string().date().optional(),
+});
+
+export type UpdatePolicyInput = z.infer<typeof UpdatePolicySchema>;

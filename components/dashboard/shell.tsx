@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
   FileCheck2,
+  Gavel,
   LayoutDashboard,
   Menu,
   Search,
@@ -17,11 +18,13 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { CopilotPanel } from "@/components/dashboard/copilot-panel";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 import type { DashboardNavItem } from "@/components/dashboard/nav-data";
 
 const iconByHref: Record<string, LucideIcon> = {
   "/corporate": LayoutDashboard,
   "/corporate/discovery": Search,
+  "/corporate/governance": Gavel,
   "/corporate/compliance": ShieldCheck,
   "/corporate/settings": Settings,
   "/ngo": LayoutDashboard,
@@ -114,6 +117,7 @@ export function DashboardShell({
             <span className="text-sm font-medium text-muted-foreground">{portal} workspace</span>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <CopilotPanel />
             <UserButton />
           </div>

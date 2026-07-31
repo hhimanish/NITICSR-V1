@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 
 import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
 import { getPool } from "@/lib/db";
+import { recordDecision } from "@/lib/governance";
 import { can, requirePermission } from "@/lib/rbac";
 import { UpdateCsrProjectSchema } from "@/lib/schemas-v1";
 
@@ -81,6 +82,17 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
     `UPDATE csr_projects SET ${fields.join(", ")} WHERE id = $${values.length} RETURNING id, title, status`,
     values
   );
+
+  if (input.status === "approved") {
+    await recordDecision({
+      organizationId: corporateOrgId,
+      decidedByClerkUserId: userId,
+      decisionType: "csr_project.approved",
+      entityType: "csr_project",
+      entityId: id,
+      rationale: input.rationale,
+    });
+  }
 
   return apiSuccess(rows[0]);
 });

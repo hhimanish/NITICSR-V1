@@ -86,7 +86,8 @@ export const GET = withApiErrors(async (req: NextRequest) => {
 
   const { rows } = await pool.query(
     `SELECT p.id, p.title, p.status, p.budget_amount, p.currency, p.start_date, p.end_date,
-            p.corporate_org_id, p.ngo_profile_id, c.key AS csr_category_key, c.name AS csr_category_name
+            p.corporate_org_id, p.ngo_profile_id, p.created_at,
+            c.key AS csr_category_key, c.name AS csr_category_name
             ${distanceSelect}
        FROM csr_projects p
        JOIN csr_categories c ON c.id = p.csr_category_id

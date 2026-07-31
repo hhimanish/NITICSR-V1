@@ -68,9 +68,17 @@ export default function AuditorReviewQueuePage() {
             <div key={r.id} className="rounded-2xl border border-border bg-card p-5">
               <div className="flex items-center justify-between">
                 <h2 className="font-heading text-base font-semibold">{r.ngo_name}</h2>
-                <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize text-muted-foreground">
-                  {r.status.replace("_", " ")}
-                </span>
+                <div className="flex items-center gap-2">
+                  {r.status === "pending" &&
+                    Date.now() - new Date(r.created_at).getTime() > 7 * 86_400_000 && (
+                      <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent-foreground">
+                        Overdue
+                      </span>
+                    )}
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize text-muted-foreground">
+                    {r.status.replace("_", " ")}
+                  </span>
+                </div>
               </div>
 
               {r.status !== "approved" && r.status !== "rejected" && (

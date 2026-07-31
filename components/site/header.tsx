@@ -14,6 +14,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 
 const solutionsColumns = [
   {
@@ -77,6 +78,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-1 md:flex">
+          <ThemeToggle />
           <Button variant="ghost" size="sm" render={<Link href="/corporate" />}>
             Corporate login
           </Button>

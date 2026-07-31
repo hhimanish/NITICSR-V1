@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 
 import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
 import { getPool } from "@/lib/db";
+import { recordDecision } from "@/lib/governance";
 import { queueNotification } from "@/lib/notifications";
 import { requirePermission } from "@/lib/rbac";
 import { ReviewVerificationRequestSchema } from "@/lib/schemas-v1";
@@ -36,6 +37,17 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
 
   if (rows.length === 0) return apiError(404, "Verification request not found");
   const updated = rows[0];
+
+  if (updated.status === "approved" || updated.status === "rejected") {
+    await recordDecision({
+      organizationId: input.organizationId,
+      decidedByClerkUserId: userId,
+      decisionType: `verification.${updated.status}`,
+      entityType: "verification_request",
+      entityId: updated.id,
+      rationale: input.reviewNotes,
+    });
+  }
 
   if (updated.status !== "in_review") {
     const { rows: notifyRows } = await pool.query(
