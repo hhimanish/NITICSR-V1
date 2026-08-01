@@ -131,3 +131,21 @@ export const UpdateObligationSchema = z.object({
 });
 
 export type UpdateObligationInput = z.infer<typeof UpdateObligationSchema>;
+
+export const NGO_DOCUMENT_TYPES = ["12A", "80G", "FCRA", "CSR1", "PAN", "REGISTRATION_CERTIFICATE", "OTHER"] as const;
+
+export const CreateNgoDocumentSchema = z.object({
+  documentType: z.enum(NGO_DOCUMENT_TYPES),
+  fileUrl: z.string().url().max(2000).optional(),
+  issuedAt: z.string().date().optional(),
+  expiresAt: z.string().date().optional(),
+});
+
+export type CreateNgoDocumentInput = z.infer<typeof CreateNgoDocumentSchema>;
+
+export const ReviewNgoDocumentSchema = z.object({
+  organizationId: z.string().uuid(),
+  status: z.enum(["verified", "rejected"]),
+});
+
+export type ReviewNgoDocumentInput = z.infer<typeof ReviewNgoDocumentSchema>;

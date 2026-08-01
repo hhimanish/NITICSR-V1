@@ -10,10 +10,13 @@ import { useOrg } from "@/components/dashboard/org-context";
 type VerificationRequest = {
   id: string;
   status: string;
+  ngo_profile_id: string;
   ngo_name: string;
   review_notes: string | null;
   created_at: string;
 };
+
+type PendingDocument = { id: string; document_type: string; ngo_profile_id: string };
 
 export default function AuditorReviewQueuePage() {
   const org = useOrg();
@@ -21,14 +24,51 @@ export default function AuditorReviewQueuePage() {
   const [notesByRequest, setNotesByRequest] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDocsByNgo, setPendingDocsByNgo] = useState<Record<string, PendingDocument[]>>({});
+  const [docBusyId, setDocBusyId] = useState<string | null>(null);
 
   function load() {
     fetch(`/api/v1/verification-requests?organizationId=${org.id}`)
       .then((r) => r.json())
-      .then((body) => setRequests(body.data ?? []));
+      .then((body) => {
+        const reqs: VerificationRequest[] = body.data ?? [];
+        setRequests(reqs);
+        for (const r of reqs) loadPendingDocs(r.ngo_profile_id);
+      });
+  }
+
+  function loadPendingDocs(ngoProfileId: string) {
+    fetch(`/api/v1/ngo-profiles/${ngoProfileId}`)
+      .then((r) => (r.ok ? r.json() : { data: null }))
+      .then((body) => {
+        const docs: PendingDocument[] = (body.data?.documents ?? []).filter(
+          (d: { status: string }) => d.status === "pending"
+        );
+        setPendingDocsByNgo((prev) => ({ ...prev, [ngoProfileId]: docs.map((d) => ({ ...d, ngo_profile_id: ngoProfileId })) }));
+      })
+      .catch(() => {});
   }
 
   useEffect(load, [org.id]);
+
+  async function reviewDocument(ngoProfileId: string, documentId: string, status: "verified" | "rejected") {
+    setDocBusyId(documentId);
+    try {
+      const res = await fetch(`/api/v1/ngo-documents/${documentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: org.id, status }),
+      });
+      if (res.ok) {
+        setPendingDocsByNgo((prev) => ({
+          ...prev,
+          [ngoProfileId]: (prev[ngoProfileId] ?? []).filter((d) => d.id !== documentId),
+        }));
+      }
+    } finally {
+      setDocBusyId(null);
+    }
+  }
 
   async function updateStatus(id: string, status: string) {
     setBusyId(id);
@@ -118,6 +158,39 @@ export default function AuditorReviewQueuePage() {
               )}
               {r.review_notes && (
                 <p className="mt-3 text-sm text-muted-foreground">Notes: {r.review_notes}</p>
+              )}
+
+              {(pendingDocsByNgo[r.ngo_profile_id]?.length ?? 0) > 0 && (
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    Pending documents
+                  </p>
+                  <ul className="mt-2 space-y-2">
+                    {pendingDocsByNgo[r.ngo_profile_id].map((d) => (
+                      <li key={d.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+                        <span>{d.document_type}</span>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={docBusyId === d.id}
+                            onClick={() => reviewDocument(r.ngo_profile_id, d.id, "verified")}
+                          >
+                            Verify
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={docBusyId === d.id}
+                            onClick={() => reviewDocument(r.ngo_profile_id, d.id, "rejected")}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           ))}

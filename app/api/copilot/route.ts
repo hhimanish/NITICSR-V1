@@ -84,6 +84,31 @@ export const POST = withApiErrors(async (req: NextRequest) => {
   // Copilot has no compliance summary to ground answers in yet.
   const complianceSummary = isNgo ? null : await computeOrgComplianceSummary(input.organizationId);
 
+  // Real, own-org-scoped NGO due-diligence signal: which of this
+  // corporate's actual NGO partners have a verified document expiring soon.
+  // Deliberately not a cross-tenant trust/risk score — just the documents
+  // this corporate is already entitled to see via its own partnerships.
+  let ngoPartnerDocumentAlerts: { ngoName: string; documentType: string; expiresAt: string }[] = [];
+  if (!isNgo) {
+    const { rows } = await pool.query(
+      `SELECT DISTINCT np.legal_name, nd.document_type, nd.expires_at
+         FROM csr_projects p
+         JOIN ngo_profiles np ON np.id = p.ngo_profile_id
+         JOIN ngo_documents nd ON nd.ngo_profile_id = np.id
+        WHERE p.corporate_org_id = $1 AND p.deleted_at IS NULL
+          AND nd.status = 'verified' AND nd.expires_at IS NOT NULL
+          AND nd.expires_at <= (CURRENT_DATE + INTERVAL '60 days')
+        ORDER BY nd.expires_at ASC
+        LIMIT 20`,
+      [input.organizationId]
+    );
+    ngoPartnerDocumentAlerts = rows.map((r) => ({
+      ngoName: r.legal_name as string,
+      documentType: r.document_type as string,
+      expiresAt: r.expires_at as string,
+    }));
+  }
+
   let cerebras;
   try {
     cerebras = getCerebrasClient();
@@ -115,6 +140,7 @@ export const POST = withApiErrors(async (req: NextRequest) => {
           overdueObligations: complianceSummary.overdueObligations,
         }
       : null,
+    ngoPartnerDocumentAlerts,
   };
 
   const completion = await cerebras.chat.completions.create({

@@ -67,6 +67,66 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /ngo-profiles/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        NGO 360 view (requires NGO.Profile.Read in any organization): full
+        profile, documents, per-provider verification breakdown, aggregate
+        (not per-project) partnership stats, and an honestly-computed trust
+        score — components with no real data source (financial, governance,
+        audit) are returned null rather than estimated.
+      responses:
+        "200": { description: OK }
+
+  /organizations/{id}/ngo-profile/documents:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List an NGO's own documents (requires NGO.Profile.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Add a document record for the NGO's own profile (requires NGO.Profile.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documentType]
+              properties:
+                documentType:
+                  type: string
+                  enum: [12A, 80G, FCRA, CSR1, PAN, REGISTRATION_CERTIFICATE, OTHER]
+                fileUrl: { type: string, format: uri }
+                issuedAt: { type: string, format: date }
+                expiresAt: { type: string, format: date }
+      responses:
+        "200": { description: Created }
+
+  /ngo-documents/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: >
+        Verify or reject an NGO document (requires NGO.Verify in the
+        reviewer's own organization — cross-tenant review, same pattern as
+        verification-requests).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId, status]
+              properties:
+                organizationId: { type: string, format: uuid }
+                status: { type: string, enum: [verified, rejected] }
+      responses:
+        "200": { description: Updated }
+
   /csr-projects/{id}/compliance:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }

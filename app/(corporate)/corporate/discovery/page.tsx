@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Loader2, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -97,7 +98,11 @@ export default function CorporateDiscoveryPage() {
             </p>
           ) : (
             results.map((ngo) => (
-              <div key={ngo.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <Link
+                key={ngo.id}
+                href={`/corporate/discovery/${ngo.id}`}
+                className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+              >
                 <h3 className="font-heading text-base font-semibold">{ngo.legal_name}</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {ngo.headquarters_state ?? "State not set"} · Operates in{" "}
@@ -106,7 +111,7 @@ export default function CorporateDiscoveryPage() {
                 {ngo.description && (
                   <p className="mt-2 text-sm text-foreground/80">{ngo.description}</p>
                 )}
-              </div>
+              </Link>
             ))
           )}
         </div>

@@ -71,6 +71,7 @@ export type CopilotContext = {
     projectsWithGaps: number;
     overdueObligations: number;
   } | null;
+  ngoPartnerDocumentAlerts?: { ngoName: string; documentType: string; expiresAt: string }[];
 };
 
 /** Grounds every answer in the caller's own org data only — no cross-tenant
@@ -87,11 +88,18 @@ Rules:
 - Do not discuss other organizations' data — you were not given any.
 - When asked about policy, cite the policy title you're drawing from.
 - When asked about compliance, ground your answer in the compliance summary figures given —
-  never estimate or invent a score, obligation count, or gap count.`;
+  never estimate or invent a score, obligation count, or gap count.
+- When asked about NGO partners, only cite the document-expiry alerts given — never invent or
+  estimate an NGO's trust, risk, financial, or governance standing; that data isn't provided.`;
 
   const user = `Organization: ${context.organizationName} (${context.organizationType})
 ${context.ngoProfile ? `NGO profile: ${JSON.stringify(context.ngoProfile)}\n` : ""}
 ${context.compliance ? `Compliance summary: ${JSON.stringify(context.compliance)}\n` : ""}
+${
+  context.ngoPartnerDocumentAlerts && context.ngoPartnerDocumentAlerts.length > 0
+    ? `NGO partner documents expiring within 60 days: ${JSON.stringify(context.ngoPartnerDocumentAlerts)}\n`
+    : ""
+}
 Active governance policies (${context.policies?.length ?? 0}):
 ${JSON.stringify(context.policies ?? [], null, 2)}
 

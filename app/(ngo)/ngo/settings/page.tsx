@@ -6,9 +6,41 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { TrustScoreWidget } from "@/components/design-system/trust-score-widget";
+import { VerificationBadge, type VerificationStatus } from "@/components/design-system/verification-badge";
 import { useOrg } from "@/components/dashboard/org-context";
 import { CSR_CATEGORIES } from "@/lib/csr-categories";
+
+const DOCUMENT_TYPES = ["12A", "80G", "FCRA", "CSR1", "PAN", "REGISTRATION_CERTIFICATE", "OTHER"] as const;
+
+type NgoDocument = {
+  id: string;
+  document_type: string;
+  status: "pending" | "verified" | "expired" | "rejected";
+  issued_at: string | null;
+  expires_at: string | null;
+};
+
+type TrustScore = {
+  score: number;
+  verificationComponent: number | null;
+  projectSuccessComponent: number | null;
+  notes: string;
+} | null;
+
+function documentBadgeStatus(status: NgoDocument["status"]): VerificationStatus {
+  if (status === "verified") return "verified";
+  if (status === "expired" || status === "rejected") return "expired";
+  return "pending";
+}
 
 type ProfileForm = {
   legalName: string;
@@ -35,6 +67,21 @@ export default function NgoSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ngoProfileId, setNgoProfileId] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<NgoDocument[]>([]);
+  const [trustScore, setTrustScore] = useState<TrustScore>(null);
+  const [docType, setDocType] = useState<string>("");
+  const [docExpiresAt, setDocExpiresAt] = useState("");
+  const [addingDoc, setAddingDoc] = useState(false);
+
+  function loadIntelligence(profileId: string) {
+    fetch(`/api/v1/organizations/${org.id}/ngo-profile/documents`)
+      .then((r) => r.json())
+      .then((body) => setDocuments(body.data ?? []));
+    fetch(`/api/v1/ngo-profiles/${profileId}`)
+      .then((r) => r.json())
+      .then((body) => setTrustScore(body.data?.trustScore ?? null));
+  }
 
   useEffect(() => {
     fetch(`/api/v1/organizations/${org.id}/ngo-profile`)
@@ -49,10 +96,33 @@ export default function NgoSettingsPage() {
             website: body.data.website ?? "",
             causeCategoryKeys: body.data.cause_category_keys ?? [],
           });
+          setNgoProfileId(body.data.id);
+          loadIntelligence(body.data.id);
         }
       })
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [org.id]);
+
+  async function addDocument(e: React.FormEvent) {
+    e.preventDefault();
+    if (!docType) return;
+    setAddingDoc(true);
+    try {
+      const res = await fetch(`/api/v1/organizations/${org.id}/ngo-profile/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentType: docType, expiresAt: docExpiresAt || undefined }),
+      });
+      if (res.ok) {
+        setDocType("");
+        setDocExpiresAt("");
+        if (ngoProfileId) loadIntelligence(ngoProfileId);
+      }
+    } finally {
+      setAddingDoc(false);
+    }
+  }
 
   function toggleCause(key: string) {
     setForm((prev) => ({
@@ -179,6 +249,96 @@ export default function NgoSettingsPage() {
           Save profile
         </Button>
       </form>
+
+      {ngoProfileId && (
+        <>
+          <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+            <h2 className="font-heading text-lg font-semibold">Verification &amp; trust</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              How corporates evaluating your NGO see your standing — computed only from real
+              documents and project history, never estimated.
+            </p>
+            <div className="mt-4">
+              {trustScore ? (
+                <TrustScoreWidget
+                  score={trustScore.score}
+                  size={100}
+                  breakdown={[
+                    trustScore.verificationComponent !== null && {
+                      label: "Verification",
+                      value: trustScore.verificationComponent,
+                    },
+                    trustScore.projectSuccessComponent !== null && {
+                      label: "Project track record",
+                      value: trustScore.projectSuccessComponent,
+                    },
+                  ].filter((v): v is { label: string; value: number } => Boolean(v))}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Not yet scorable — add documents or complete a project to build your score.
+                </p>
+              )}
+              {trustScore?.notes && <p className="mt-3 text-xs text-muted-foreground">{trustScore.notes}</p>}
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+            <h2 className="font-heading text-lg font-semibold">Documents</h2>
+            {documents.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">No documents added yet.</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {documents.map((d) => (
+                  <li
+                    key={d.id}
+                    className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                  >
+                    <span>{d.document_type}</span>
+                    <span className="flex items-center gap-3 text-xs text-muted-foreground">
+                      {d.expires_at && <span>Expires {new Date(d.expires_at).toLocaleDateString("en-IN")}</span>}
+                      <VerificationBadge label={d.status} status={documentBadgeStatus(d.status)} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form onSubmit={addDocument} className="mt-4 flex flex-wrap items-end gap-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="docType">Document type</Label>
+                <Select value={docType} onValueChange={(v) => setDocType(v ?? "")}>
+                  <SelectTrigger id="docType" className="w-56" aria-label="Document type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOCUMENT_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="docExpires">Expires (optional)</Label>
+                <Input
+                  id="docExpires"
+                  type="date"
+                  value={docExpiresAt}
+                  onChange={(e) => setDocExpiresAt(e.target.value)}
+                  className="w-40"
+                />
+              </div>
+              <Button type="submit" size="sm" variant="outline" disabled={!docType || addingDoc}>
+                Add document
+              </Button>
+            </form>
+            <p className="mt-2 text-xs text-muted-foreground">
+              An auditor verifies each document before it counts toward your verification score.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }

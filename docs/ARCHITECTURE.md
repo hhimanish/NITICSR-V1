@@ -507,3 +507,101 @@ exist yet (see the itemized list below).
   `db/migrations/012_compliance.sql` and `lib/compliance.ts`, matching
   how every prior phase was documented, rather than producing a stack of
   RFC-style documents nothing will read.
+
+## ERT 3: NGO Intelligence — real signals only, nothing fabricated
+
+The brief asked for a "Bloomberg Terminal for India's Social Sector":
+16 weighted trust dimensions, an NGO Health Index, Governance
+Intelligence (board diversity, tenure, conflicts of interest),
+Financial Intelligence (revenue trends, cash runway), a Fraud
+Intelligence Engine (image-reuse detection, GPS anomalies, invoice
+irregularities), AI Impact Prediction, and a Relationship Graph.
+
+This is the one ERT where the right call wasn't just "defer the
+unbuildable parts" — it was refusing to build several of them as
+literally specified, because doing so would be actively harmful. The
+platform's stated purpose is helping a Fortune 500 decide whether an
+NGO can be trusted with ₹500 crore. There is no financial statement,
+board roster, HR record, photo, invoice, or GPS log anywhere in this
+system for any NGO — `verification_checks` is explicitly documented as
+a stub interface (no MCA21/DARPAN/Income-Tax/GST/FCRA integration
+exists; none expose public self-serve APIs). A "96/100 Trust Score" or
+a fraud-risk score computed from none of that isn't a scoped-down
+version of trust intelligence, it's a fabricated number that looks like
+real due diligence — and on a platform used to size a ₹500 crore
+decision, a confident-looking fake number is worse than an honest
+blank. That ruled out Governance Intelligence, Financial Intelligence,
+Fraud Intelligence, Impact Prediction, and the single blended Health
+Index as specified.
+
+### Completed this ERT
+
+- **Finished dormant schema honestly**: `ngo_trust_scores` has existed
+  unused since Phase 2 (`db/migrations/004_ngo.sql`), with five score
+  components (verification, financial, governance, audit, project
+  success). `lib/ngo-intelligence.ts` now computes exactly the two of
+  five that have a real data source — `verification_component` (document
+  verification completeness + per-provider `verification_checks` pass
+  rate) and `project_success_component` (completed vs. cancelled project
+  ratio) — and leaves financial/governance/audit `NULL`, never
+  fabricated. The blended `score` only averages components that exist;
+  an NGO with neither real signal yet gets no row at all (`null`, not a
+  misleading zero), and any stale row is cleared if the signals
+  disappear.
+- **NGO documents, finally with a CRUD surface**: `ngo_documents` existed
+  since Phase 2 with no API. `POST/GET
+  /api/v1/organizations/:id/ngo-profile/documents` lets an NGO record a
+  document (type + optional external link, same `evidence_url`-as-text
+  pattern already used by `milestones` — not a new "evidence vault",
+  just finishing existing schema). `PATCH /api/v1/ngo-documents/:id`
+  lets an auditor verify or reject one, mirroring the existing
+  verification-requests review pattern; the Auditor workspace now shows
+  pending documents inline in the review queue.
+- **NGO 360**: `GET /api/v1/ngo-profiles/:id` and a new
+  `/corporate/discovery/:id` page — identity, documents with expiry,
+  the real per-provider verification breakdown, operating footprint, and
+  the honest trust score with its component breakdown (the existing
+  `TrustScoreWidget`/`VerificationBadge` design-system components, built
+  in Phase 2 but only ever fed illustrative marketing data until now,
+  render real numbers for the first time).
+- **Partnership history, aggregated only**: rather than exposing another
+  corporate's specific project titles or budgets to a viewing corporate
+  (a real cross-tenant data leak risk the brief's "Relationship Graph"
+  would have created), `computeNgoPartnershipStats` returns only totals —
+  partner count, project count by status, total funding — for the NGO
+  being viewed.
+- **AI Copilot NGO due-diligence signal**: a Corporate's Copilot context
+  now includes which of *that corporate's own* NGO partners have a
+  verified document expiring within 60 days — real, own-org-scoped data
+  the corporate is already entitled to see via its existing
+  partnerships, explicitly not a cross-tenant trust or risk score.
+
+### Deferred, same policy as every phase above
+
+- **Governance Intelligence** (board diversity, tenure, conflicts of
+  interest, political exposure) — no NGO board/leadership data model
+  exists, identical reasoning to ERT 1 declining the corporate
+  Board/Committee domain.
+- **Financial Intelligence** (revenue/expense trends, cash runway,
+  budget forecasting) — NGOs submit no financial statements to the
+  platform; there's no source.
+- **Fraud Intelligence Engine** (image-reuse/pHash, GPS anomalies,
+  invoice irregularities, synthetic identities) — no photos, invoices,
+  GPS logs, or vendor records are captured anywhere.
+- **Impact Intelligence / AI Impact Prediction** (lives improved, income
+  increase, healthcare outcomes) — no outcome-tracking data beyond the
+  beneficiary count-estimates already in the system.
+- **NGO Relationship/Knowledge Graph, pgvector/RAG enterprise search** —
+  the recurring blocker since Phase 2: no ingested corpus.
+- **PostGIS heatmap layers** (disaster zones, aspirational districts,
+  tribal regions) — ADR 0002 stands, and those layers need external
+  government datasets not integrated anywhere.
+- **NGO Capacity Intelligence** (HR/procurement/M&E/tech maturity
+  scoring + AI-generated roadmaps) — no underlying data for any
+  dimension.
+- **Four role-aware AI copilots, SCIM, GraphQL gateway, enterprise API
+  catalog with versioning/rate limits** — one real Copilot exists;
+  forking it into personas without new data per persona is UI theater.
+  No enterprise customer has asked for SCIM or GraphQL.
+- **Bespoke mobile experience, offline saved views** — no mobile app
+  exists.
