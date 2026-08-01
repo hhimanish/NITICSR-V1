@@ -26,6 +26,8 @@ export const PERMISSIONS = [
   "Governance.Policy.Write",
   "Governance.Decision.Read",
   "Governance.Delegation.Manage",
+  "Compliance.Obligation.Read",
+  "Compliance.Obligation.Write",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

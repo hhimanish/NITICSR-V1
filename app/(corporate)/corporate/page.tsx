@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Gavel, HandCoins, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, Gavel, HandCoins, ShieldCheck, TrendingUp, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { KpiTile } from "@/components/dashboard/kpi-tile";
@@ -26,6 +26,7 @@ export default function CorporateDashboardPage() {
   const org = useOrg();
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [decisionCount, setDecisionCount] = useState<number | null>(null);
+  const [complianceScore, setComplianceScore] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`/api/v1/csr-projects?organizationId=${org.id}&limit=50`)
@@ -42,6 +43,11 @@ export default function CorporateDashboardPage() {
         setDecisionCount(recent.length);
       })
       .catch(() => setDecisionCount(0));
+
+    fetch(`/api/v1/organizations/${org.id}/compliance-summary`)
+      .then((r) => r.json())
+      .then((body) => setComplianceScore(body.data?.averageScore ?? null))
+      .catch(() => setComplianceScore(null));
   }, [org.id]);
 
   const totalBudget = (projects ?? []).reduce(
@@ -72,7 +78,7 @@ export default function CorporateDashboardPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <KpiTile icon={Users} label="NGO partners" value={String(ngoCount)} />
         <KpiTile
           icon={HandCoins}
@@ -92,6 +98,11 @@ export default function CorporateDashboardPage() {
           hint={`Pending >${OVERDUE_DAYS} days`}
         />
         <KpiTile icon={Gavel} label="Decisions (30d)" value={String(decisionCount ?? 0)} />
+        <KpiTile
+          icon={ShieldCheck}
+          label="Compliance score"
+          value={complianceScore === null ? "—" : `${complianceScore}%`}
+        />
       </div>
 
       <div className="mt-8">

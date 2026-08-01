@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 
 import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
+import { generateObligationsForProject } from "@/lib/compliance";
 import { getPool } from "@/lib/db";
 import { recordDecision } from "@/lib/governance";
 import { can, requirePermission } from "@/lib/rbac";
@@ -92,6 +93,7 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
       entityId: id,
       rationale: input.rationale,
     });
+    await generateObligationsForProject(corporateOrgId, id);
   }
 
   return apiSuccess(rows[0]);

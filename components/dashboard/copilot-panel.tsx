@@ -90,8 +90,8 @@ export function CopilotPanel() {
           </p>
           {messages.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Ask about your own CSR projects, governance policies, and organization data —
-              answers are grounded only in {org.name}&apos;s records.
+              Ask about your own CSR projects, governance policies, compliance status, and
+              organization data — answers are grounded only in {org.name}&apos;s records.
             </p>
           )}
           {messages.map((m, i) => (

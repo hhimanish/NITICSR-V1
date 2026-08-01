@@ -1,6 +1,8 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import { AlertTriangle, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,16 +54,25 @@ type ProjectDetail = {
 
 const STATUSES = ["draft", "proposed", "approved", "active", "completed", "cancelled"];
 
+type ComplianceCheck = { key: string; label: string; passed: boolean; severity: "high" | "medium" | "low" };
+type Obligation = { id: string; description: string; due_date: string; status: "pending" | "satisfied" | "waived" };
+type Compliance = { checks: ComplianceCheck[]; obligations: Obligation[]; score: number };
+
 export default function CsrProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [compliance, setCompliance] = useState<Compliance | null>(null);
 
   function reload() {
     fetch(`/api/v1/csr-projects/${id}`)
       .then((r) => r.json())
       .then((body) => (body.data ? setProject(body.data) : setError(body.error)));
+    fetch(`/api/v1/csr-projects/${id}/compliance`)
+      .then((r) => r.json())
+      .then((body) => setCompliance(body.data ?? null))
+      .catch(() => setCompliance(null));
   }
 
   useEffect(reload, [id]);
@@ -170,6 +181,59 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+
+      {compliance && (
+        <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading text-lg font-semibold">Compliance</h2>
+            <span className="flex items-center gap-2 text-sm font-medium">
+              {compliance.score < 100 ? (
+                <AlertTriangle className="size-4 text-accent" aria-hidden="true" />
+              ) : (
+                <ShieldCheck className="size-4 text-secondary" aria-hidden="true" />
+              )}
+              {compliance.score}%
+            </span>
+          </div>
+          <ul className="mt-3 space-y-1.5">
+            {compliance.checks.map((c) => (
+              <li key={c.key} className="flex items-center gap-2 text-sm">
+                <span
+                  className={
+                    c.passed
+                      ? "size-1.5 shrink-0 rounded-full bg-secondary"
+                      : "size-1.5 shrink-0 rounded-full bg-accent"
+                  }
+                  aria-hidden="true"
+                />
+                {c.label}
+              </li>
+            ))}
+          </ul>
+          {compliance.obligations.length > 0 && (
+            <>
+              <p className="mt-4 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Regulatory obligations
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {compliance.obligations.map((o) => (
+                  <li key={o.id} className="text-sm text-muted-foreground">
+                    {o.description} — due {new Date(o.due_date).toLocaleDateString("en-IN")} &middot;{" "}
+                    <span className="capitalize">{o.status}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Manage filing status from the{" "}
+                <Link href="/corporate/compliance" className="text-secondary hover:underline">
+                  Compliance workspace
+                </Link>
+                .
+              </p>
+            </>
+          )}
+        </section>
+      )}
 
       <section className="mt-6">
         <h2 className="font-heading text-lg font-semibold">SDG alignment</h2>

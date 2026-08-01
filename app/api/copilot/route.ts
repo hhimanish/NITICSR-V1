@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
 import { buildCopilotMessages, CEREBRAS_MODEL, getCerebrasClient } from "@/lib/cerebras";
+import { computeOrgComplianceSummary } from "@/lib/compliance";
 import { getPool } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { requirePermission } from "@/lib/rbac";
@@ -79,6 +80,10 @@ export const POST = withApiErrors(async (req: NextRequest) => {
     }
   }
 
+  // Obligations key off the corporate org, not the NGO — an NGO's own
+  // Copilot has no compliance summary to ground answers in yet.
+  const complianceSummary = isNgo ? null : await computeOrgComplianceSummary(input.organizationId);
+
   let cerebras;
   try {
     cerebras = getCerebrasClient();
@@ -102,6 +107,14 @@ export const POST = withApiErrors(async (req: NextRequest) => {
       category: p.category as string,
       effectiveDate: p.effective_date as string | null,
     })),
+    compliance: complianceSummary
+      ? {
+          averageScore: complianceSummary.averageScore,
+          totalProjects: complianceSummary.totalProjects,
+          projectsWithGaps: complianceSummary.projectsWithGaps,
+          overdueObligations: complianceSummary.overdueObligations,
+        }
+      : null,
   };
 
   const completion = await cerebras.chat.completions.create({

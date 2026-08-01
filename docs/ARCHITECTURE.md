@@ -419,3 +419,91 @@ on dashboards.
   customer's identity provider or compliance mandate to build against.
 - **Unified Teams/Slack/SMS notifications** — same provider-account
   blocker as Phase 2/4/6.
+
+## ERT 2: Compliance & Regulatory Operations — a platform capability, not a module
+
+The brief's key architectural instruction was right and is the one thing
+this ERT actually organized around: compliance should permeate every
+capability rather than live in its own module. Concretely, that means
+every CSR project now carries a live compliance score and obligation set
+computed from data that already exists (SDGs, locations, beneficiaries,
+the governance decision log, NGO assignment) — surfaced on the project
+detail page, the Corporate dashboard, the Compliance workspace, and the
+AI Copilot, all reading the same underlying computation
+(`lib/compliance.ts`'s `computeOrgComplianceSummary`), not four separate
+implementations of "are we compliant."
+
+The rest of the brief — a monorepo split into `apps/{web,api,mobile,docs,admin}`
++ `packages/*` with Terraform/Kubernetes, a Regulatory Knowledge Graph, a
+configurable workflow/rules engine, an evidence vault with OCR and
+digital signatures, MFA/SAML/OIDC/ABAC, SOC 2/ISO 27001 readiness — was
+deferred for the same reason ADR 0005 has held since Phase 6: none of it
+is a scoped-down version of something real, each depends on
+infrastructure, a data corpus, or a vendor relationship that doesn't
+exist yet (see the itemized list below).
+
+### Completed this ERT
+
+- **Compliance obligation register**: `compliance_obligations`
+  (`db/migrations/012_compliance.sql`) — four standard obligations
+  (Schedule VII classification, utilization reporting, CSR-2 filing,
+  impact documentation) auto-created via `generateObligationsForProject`
+  the moment a project is approved (wired into the same PATCH handler
+  that already calls `recordDecision`, from ERT 1). Closing one requires
+  an explicit human act — `PATCH /api/v1/compliance-obligations/:id` —
+  not an automatic status flip, because "filed" is a real-world fact the
+  platform can't observe on its own.
+- **Deterministic compliance-gap checks**: `getProjectComplianceChecks`
+  in `lib/compliance.ts` — five concrete, severity-weighted checks (NGO
+  assigned, approval logged, SDG/Schedule VII alignment recorded,
+  location recorded, beneficiary data recorded) computed on read from
+  data the platform already collects. This is the real version of the
+  brief's "AI should detect missing statutory information" — built as
+  deterministic checks rather than a model guessing at a status.
+- **Blended compliance score**: `getComplianceScore` weights the checks
+  above and open obligations into one 0-100 number per project, and
+  `computeOrgComplianceSummary` averages it across an organization's
+  active projects — the real version of the brief's "Enterprise
+  Compliance Score," grounded in the checks above rather than a
+  fabricated index.
+- **Surfaced everywhere, not a separate page**: a "Compliance score" KPI
+  tile on the Corporate dashboard, a compliance checklist + obligations
+  panel on every project detail page, a rebuilt `/corporate/compliance`
+  workspace (org-wide summary + per-project drill-down with
+  mark-filed/waive actions), and the AI Copilot's context now includes
+  the same compliance summary so it can answer "are we compliant"
+  questions grounded in real figures instead of guessing.
+
+### Deferred, same policy as every phase above
+
+- **Monorepo split into `apps/{web,api,mobile,docs,admin}` +
+  `packages/*` with Terraform/Kubernetes** — a full re-platform onto
+  microservices with a cluster to operate; no ops team or scaling need
+  justifies it (identical to the Phase 6 domain-driven-refactor
+  deferral, same ADR 0005).
+- **Regulatory Knowledge Graph** (Acts/Sections/Circulars/judicial
+  precedents linked semantically) — there's no ingested corpus of
+  regulatory text anywhere in the system; a graph with nothing in it
+  isn't a capability.
+- **Configurable workflow engine / declarative business rules engine**
+  (decision tables, simulation, versioning, dynamic approver
+  resolution) — still no backlog of 5+ concrete rules beyond what the
+  deterministic checks above already cover (Phase 6 / ERT 1 deferral
+  stands).
+- **Evidence vault** (OCR, digital signatures, hash verification,
+  retention/duplicate detection) — `ngo_documents.file_url` is still a
+  bare text field; there is no file upload pipeline at all. Building an
+  evidence vault before files can be uploaded is backwards, and adding
+  real storage means picking a vendor (S3/R2/Render disk) — a decision
+  for the product owner, not one to make silently mid-build.
+- **MFA/SAML/OIDC SSO, ABAC, SOC 2/ISO 27001 readiness** — no enterprise
+  customer's identity provider or auditor engagement to build against.
+- **Mobile app, multi-agent AI orchestration** — no mobile app exists;
+  no concrete multi-agent use case beyond the single-agent Copilot
+  already shipped.
+- **17 separate pre-implementation deliverable documents** (capability
+  map, event-driven architecture spec, observability plan, etc.) —
+  folded into this section plus the code comments in
+  `db/migrations/012_compliance.sql` and `lib/compliance.ts`, matching
+  how every prior phase was documented, rather than producing a stack of
+  RFC-style documents nothing will read.

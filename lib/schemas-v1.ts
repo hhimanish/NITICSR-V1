@@ -125,3 +125,9 @@ export const UpdatePolicySchema = z.object({
 });
 
 export type UpdatePolicyInput = z.infer<typeof UpdatePolicySchema>;
+
+export const UpdateObligationSchema = z.object({
+  status: z.enum(["satisfied", "waived"]),
+});
+
+export type UpdateObligationInput = z.infer<typeof UpdateObligationSchema>;

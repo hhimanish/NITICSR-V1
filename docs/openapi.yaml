@@ -67,6 +67,45 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /csr-projects/{id}/compliance:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Get a project's compliance posture (requires CSR.Project.Read):
+        deterministic data-completeness checks, regulatory obligations, and
+        a blended 0-100 score.
+      responses:
+        "200": { description: OK }
+
+  /compliance-obligations/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Mark a compliance obligation satisfied or waived (requires Compliance.Obligation.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [satisfied, waived] }
+      responses:
+        "200": { description: Updated }
+
+  /organizations/{id}/compliance-summary:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Aggregate compliance score and obligation counts across every
+        non-draft CSR project in the organization (requires
+        Compliance.Obligation.Read).
+      responses:
+        "200": { description: OK }
+
   /governance/decisions:
     get:
       summary: List the immutable governance decision log (requires Governance.Decision.Read)

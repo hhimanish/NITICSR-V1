@@ -65,6 +65,12 @@ export type CopilotContext = {
   projects: { id: string; title: string; status: string; budgetAmount: number | null; category: string }[];
   ngoProfile?: { legalName: string; operatingStates: string[]; causeAreas: string[] } | null;
   policies?: { title: string; category: string; effectiveDate: string | null }[];
+  compliance?: {
+    averageScore: number;
+    totalProjects: number;
+    projectsWithGaps: number;
+    overdueObligations: number;
+  } | null;
 };
 
 /** Grounds every answer in the caller's own org data only — no cross-tenant
@@ -79,10 +85,13 @@ Rules:
   never guess or invent figures, NGO names, project details, or policy contents.
 - Be concise: 2-4 sentences, or a short list for multi-item answers.
 - Do not discuss other organizations' data — you were not given any.
-- When asked about policy, cite the policy title you're drawing from.`;
+- When asked about policy, cite the policy title you're drawing from.
+- When asked about compliance, ground your answer in the compliance summary figures given —
+  never estimate or invent a score, obligation count, or gap count.`;
 
   const user = `Organization: ${context.organizationName} (${context.organizationType})
 ${context.ngoProfile ? `NGO profile: ${JSON.stringify(context.ngoProfile)}\n` : ""}
+${context.compliance ? `Compliance summary: ${JSON.stringify(context.compliance)}\n` : ""}
 Active governance policies (${context.policies?.length ?? 0}):
 ${JSON.stringify(context.policies ?? [], null, 2)}
 
