@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Gauge, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Gauge, Loader2, MapPin, QrCode, RefreshCw, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,6 +124,27 @@ type ChangeRequest = {
   created_at: string;
 };
 
+type FieldVisit = {
+  id: string;
+  latitude: string;
+  longitude: string;
+  distance_km: string | null;
+  within_geofence: boolean | null;
+  note: string | null;
+  created_at: string;
+  checked_in_by_name: string | null;
+};
+type ProjectAsset = {
+  id: string;
+  name: string;
+  status: "planned" | "installed" | "verified" | "damaged";
+  latitude: string | null;
+  longitude: string | null;
+  evidence_url: string | null;
+};
+
+const ASSET_STATUSES: ProjectAsset["status"][] = ["planned", "installed", "verified", "damaged"];
+
 const MILESTONE_STAGES: { status: MilestoneRow["status"]; label: string }[] = [
   { status: "pending", label: "Pending" },
   { status: "in_progress", label: "In progress" },
@@ -179,6 +200,83 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
   const [newChangeReason, setNewChangeReason] = useState("");
   const [submittingChange, setSubmittingChange] = useState(false);
 
+  const [fieldVisits, setFieldVisits] = useState<FieldVisit[]>([]);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [checkInError, setCheckInError] = useState<string | null>(null);
+  const [assets, setAssets] = useState<ProjectAsset[]>([]);
+  const [newAssetName, setNewAssetName] = useState("");
+  const [addingAsset, setAddingAsset] = useState(false);
+  const [showQrCode, setShowQrCode] = useState(false);
+
+  function loadFieldData() {
+    fetch(`/api/v1/csr-projects/${id}/field-visits`)
+      .then((r) => r.json())
+      .then((body) => setFieldVisits(body.data ?? []));
+    fetch(`/api/v1/csr-projects/${id}/assets`)
+      .then((r) => r.json())
+      .then((body) => setAssets(body.data ?? []));
+  }
+
+  async function checkIn() {
+    if (!navigator.geolocation) {
+      setCheckInError("Geolocation is not available in this browser.");
+      return;
+    }
+    setCheckingIn(true);
+    setCheckInError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await fetch(`/api/v1/csr-projects/${id}/field-visits`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            }),
+          });
+          if (res.ok) loadFieldData();
+          else setCheckInError((await res.json()).error ?? "Could not record check-in");
+        } finally {
+          setCheckingIn(false);
+        }
+      },
+      (geoError) => {
+        setCheckInError(geoError.message || "Could not get your location");
+        setCheckingIn(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  async function addAsset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newAssetName.trim()) return;
+    setAddingAsset(true);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}/assets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newAssetName }),
+      });
+      if (res.ok) {
+        setNewAssetName("");
+        loadFieldData();
+      }
+    } finally {
+      setAddingAsset(false);
+    }
+  }
+
+  async function setAssetStatus(assetId: string, status: ProjectAsset["status"]) {
+    const res = await fetch(`/api/v1/csr-projects/${id}/assets/${assetId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) loadFieldData();
+  }
+
   function loadExecutionData() {
     fetch(`/api/v1/csr-projects/${id}/milestones`)
       .then((r) => r.json())
@@ -227,6 +325,7 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
       .catch(() => setCompliance(null));
     loadGrantData();
     loadExecutionData();
+    loadFieldData();
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1239,6 +1338,112 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
           </form>
         </section>
       </div>
+
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading text-lg font-semibold">Field visits</h2>
+            <Button size="sm" variant="outline" className="gap-1.5" disabled={checkingIn} onClick={checkIn}>
+              {checkingIn ? <Loader2 className="size-3.5 animate-spin" /> : <MapPin className="size-3.5" />}
+              Check in
+            </Button>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Uses your browser&apos;s location — validated against the project&apos;s registered site, within a 2km
+            geofence.
+          </p>
+          {checkInError && <p className="mt-2 text-xs text-destructive">{checkInError}</p>}
+          <ul className="mt-3 space-y-2">
+            {fieldVisits.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No field visits recorded yet.</p>
+            ) : (
+              fieldVisits.map((v) => (
+                <li key={v.id} className="rounded-lg border border-border p-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>{new Date(v.created_at).toLocaleString("en-IN")}</span>
+                    {v.within_geofence === null ? (
+                      <span className="text-xs text-muted-foreground">No registered location to check against</span>
+                    ) : v.within_geofence ? (
+                      <span className="rounded-full bg-secondary/15 px-2 py-0.5 text-xs font-medium text-secondary">
+                        Within site ({Number(v.distance_km).toFixed(1)}km)
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent-foreground">
+                        Outside site ({Number(v.distance_km).toFixed(1)}km)
+                      </span>
+                    )}
+                  </div>
+                  {v.checked_in_by_name && (
+                    <p className="mt-1 text-xs text-muted-foreground">By {v.checked_in_by_name}</p>
+                  )}
+                </li>
+              ))
+            )}
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-heading text-lg font-semibold">Asset register</h2>
+          <ul className="mt-3 space-y-2">
+            {assets.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No assets logged yet.</p>
+            ) : (
+              assets.map((a) => (
+                <li key={a.id} className="rounded-lg border border-border p-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{a.name}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{a.status}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {ASSET_STATUSES.filter((s) => s !== a.status).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setAssetStatus(a.id, s)}
+                        className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted"
+                      >
+                        → {s}
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+          <form onSubmit={addAsset} className="mt-3 flex gap-2">
+            <Input
+              placeholder="Asset name (e.g. borewell)"
+              value={newAssetName}
+              onChange={(e) => setNewAssetName(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="submit" size="sm" variant="outline" disabled={addingAsset}>
+              Add
+            </Button>
+          </form>
+        </section>
+      </div>
+
+      <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-lg font-semibold">Field QR code</h2>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowQrCode((v) => !v)}>
+            <QrCode className="size-3.5" />
+            {showQrCode ? "Hide" : "Show"}
+          </Button>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Links back to this project — generated locally, printable for field reference.
+        </p>
+        {showQrCode && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`/api/v1/csr-projects/${id}/qr-code`}
+            alt="QR code linking to this project"
+            className="mt-3 size-40"
+          />
+        )}
+      </section>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
+  ClipboardList,
   FileCheck2,
   FolderKanban,
   Gavel,
@@ -30,6 +31,7 @@ const iconByHref: Record<string, LucideIcon> = {
   "/corporate/portfolio": FolderKanban,
   "/corporate/grants": HandCoins,
   "/corporate/financials": Landmark,
+  "/corporate/surveys": ClipboardList,
   "/corporate/governance": Gavel,
   "/corporate/compliance": ShieldCheck,
   "/corporate/settings": Settings,

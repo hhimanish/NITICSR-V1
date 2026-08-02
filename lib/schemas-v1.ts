@@ -255,3 +255,51 @@ export const CreateProgramSchema = z.object({
 });
 
 export type CreateProgramInput = z.infer<typeof CreateProgramSchema>;
+
+export const CreateFieldVisitSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  note: z.string().max(1000).optional(),
+});
+
+export type CreateFieldVisitInput = z.infer<typeof CreateFieldVisitSchema>;
+
+export const CreateProjectAssetSchema = z.object({
+  name: z.string().min(2).max(200),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  evidenceUrl: z.string().url().max(2000).optional(),
+});
+
+export type CreateProjectAssetInput = z.infer<typeof CreateProjectAssetSchema>;
+
+export const UpdateProjectAssetSchema = z.object({
+  status: z.enum(["planned", "installed", "verified", "damaged"]).optional(),
+  evidenceUrl: z.string().url().max(2000).optional(),
+});
+
+export type UpdateProjectAssetInput = z.infer<typeof UpdateProjectAssetSchema>;
+
+const SurveyQuestionSchema = z.object({
+  key: z.string().min(1).max(100),
+  label: z.string().min(1).max(200),
+  type: z.enum(["text", "number", "choice"]),
+  required: z.boolean().optional(),
+  options: z.array(z.string().max(100)).max(20).optional(),
+});
+
+export const CreateSurveyDefinitionSchema = z.object({
+  title: z.string().min(2).max(200),
+  description: z.string().max(2000).optional(),
+  questions: z.array(SurveyQuestionSchema).min(1).max(30),
+});
+
+export type CreateSurveyDefinitionInput = z.infer<typeof CreateSurveyDefinitionSchema>;
+
+export const CreateSurveyResponseSchema = z.object({
+  csrProjectId: z.string().uuid().optional(),
+  beneficiaryId: z.string().uuid().optional(),
+  answers: z.record(z.string(), z.union([z.string(), z.number()])),
+});
+
+export type CreateSurveyResponseInput = z.infer<typeof CreateSurveyResponseSchema>;

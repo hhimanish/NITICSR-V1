@@ -804,3 +804,58 @@ schema" discipline as `ngo_trust_scores` before ERT 3.
   CAPA, root-cause analysis, vendor risk) — a distinct capability this
   ERT deliberately did not reach into; `project_risks` here is scoped to
   a single project's log.
+
+## ERT 7: Field Intelligence — browser-native, not a native app promise
+
+The brief's "Mobile-first. Offline." framing was the first thing to push
+back on: this is a responsive Next.js web app, not a native mobile app,
+and there is no offline-first (service-worker + local-sync) architecture
+anywhere in it. Retrofitting true offline support is a different product
+architecture, not a feature bolt-on — so this ERT stayed a real,
+browser-native capability set instead of pretending otherwise.
+
+### Completed this ERT
+
+- **GPS-verified field visits**: `field_visits` records a check-in's
+  coordinates (from the browser's own `navigator.geolocation`) and
+  computes distance/geofence pass-fail against the project's registered
+  `project_locations` using the *exact same* Haversine SQL expression
+  already used by the NGO/project radius search (ADR 0002) — reused
+  inline at the call site per that existing convention, not duplicated
+  as a separate JS function. A project with no registered location
+  simply returns a null geofence result, never a guessed one.
+- **Asset register**: `project_assets` — what was actually built, with
+  a GPS position and a status (planned/installed/verified/damaged).
+  `evidence_url` is a plain link, the same honest pattern `milestones`
+  has used since Phase 2, not a new upload system.
+- **Structured surveys**: `survey_definitions` (a JSON question list —
+  text/number/choice) + `survey_responses`, with answers validated
+  against the question definitions server-side before insert. Pure
+  structured data, no storage dependency.
+- **QR codes**: `lib/field-intelligence.ts` generates an inline SVG QR
+  code locally via the `qrcode` package (a small, offline, MIT-licensed
+  library — not a third-party API call or vendor account) linking back
+  to a project's detail page, for printable field reference.
+
+### Deferred, same policy as every phase above
+
+- **Camera-based photo evidence + EXIF extraction** — the pivotal
+  blocker, unchanged since Phase 6: no file/object storage vendor has
+  ever been chosen (no S3/R2/Render disk decision made). Photo capture
+  with nowhere real to store the photo is a placeholder, not a feature.
+- **Biometric identity verification** — WebAuthn (device fingerprint/face
+  unlock) is real and browser-native, but it authenticates a *device*,
+  not a *beneficiary's identity*; conflating the two would misrepresent
+  what the platform can actually verify. Not built.
+- **OTP** — no SMS gateway vendor integrated, the same recurring
+  blocker as every notification-channel deferral since Phase 2.
+- **Digital Signature** — no e-sign vendor, identical reasoning to
+  ERT 4's grant agreement acknowledgement.
+- **Voice/Video capture** — the same storage blocker as Camera, plus no
+  defined use case yet.
+- **Drone Integration / Satellite imagery readiness** — no vendor or
+  data-partner relationship (Sentinel Hub, Planet Labs, DGCA drone ops)
+  exists.
+- **True offline-first mobile experience** — no native app or
+  service-worker/local-sync architecture exists; this is a different
+  product architecture, not a feature to bolt on.

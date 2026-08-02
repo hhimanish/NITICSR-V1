@@ -67,6 +67,135 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /csr-projects/{id}/field-visits:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List a project's field check-ins (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Record a GPS check-in (requires CSR.Project.Write). Distance and
+        geofence pass/fail are computed against the project's registered
+        locations using the same Haversine expression as the NGO/project
+        radius search (see ADR 0002) — null if the project has no
+        registered location to check against.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [latitude, longitude]
+              properties:
+                latitude: { type: number }
+                longitude: { type: number }
+                note: { type: string }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/assets:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List a project's asset register (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Add an asset (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                latitude: { type: number }
+                longitude: { type: number }
+                evidenceUrl: { type: string, format: uri }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/assets/{assetId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: assetId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Update an asset's status or evidence link (requires CSR.Project.Write)
+      responses:
+        "200": { description: Updated }
+
+  /csr-projects/{id}/qr-code:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        An inline SVG QR code linking to this project's detail page
+        (requires CSR.Project.Read) — generated locally, no external API.
+      responses:
+        "200": { description: OK, content: { image/svg+xml: {} } }
+
+  /organizations/{id}/surveys:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List an organization's survey definitions (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Create a survey definition (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, questions]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                questions:
+                  type: array
+                  items:
+                    type: object
+                    required: [key, label, type]
+                    properties:
+                      key: { type: string }
+                      label: { type: string }
+                      type: { type: string, enum: [text, number, choice] }
+                      required: { type: boolean }
+                      options: { type: array, items: { type: string } }
+      responses:
+        "200": { description: Created }
+
+  /surveys/{id}/responses:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List a survey's responses (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Submit a survey response (requires CSR.Project.Write). Answers are
+        validated against the survey's question definitions before insert.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [answers]
+              properties:
+                csrProjectId: { type: string, format: uuid }
+                beneficiaryId: { type: string, format: uuid }
+                answers: { type: object }
+      responses:
+        "200": { description: Created }
+
   /organizations/{id}/programs:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
