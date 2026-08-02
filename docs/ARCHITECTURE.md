@@ -745,3 +745,62 @@ on a status transition.
   NGO-verification pipeline pattern applied to an entity nobody asked
   for; `vendor_name` stays a plain text field on the disbursement ledger
   instead.
+
+## ERT 6: Project Execution — finishing milestones before adding a PMO around it
+
+`milestones` has existed since Phase 2 (`db/migrations/005_csr_projects.sql`)
+with **zero CRUD API** — the project detail endpoint has always returned
+it read-only via `json_agg`, but nothing could ever create, update, or
+complete one. Before building any of the brief's PMO capability list
+(Portfolio, Program, Task, Risk, Change Request, Timeline, Gantt, Kanban,
+Resource Planning), that gap got closed first — the same "finish dormant
+schema" discipline as `ngo_trust_scores` before ERT 3.
+
+### Completed this ERT
+
+- **Milestones, finally with a real API**: `POST/GET
+  /csr-projects/:id/milestones`, `PATCH .../milestones/:milestoneId` —
+  create, update, and complete a milestone for the first time.
+- **Programs**: a `programs` table + `csr_projects.program_id` group
+  related projects under a named multi-year initiative; assignable from
+  the project detail page.
+- **Milestone tasks**: `milestone_tasks` — a sub-checklist under an
+  existing milestone, not a new project-level concept.
+- **Milestone dependencies**: `milestone_dependencies`, with a real
+  cycle check (`wouldCreateDependencyCycle` walks the dependency graph
+  before allowing a new link) rather than trusting the UI to prevent
+  nonsense.
+- **Project-scoped risk/issue log**: `project_risks` — title,
+  description, severity, status, owner. Deliberately scoped to a single
+  project; the enterprise-wide Risk & Audit & Assurance platform (heat
+  maps, CAPA, root-cause analysis) is a distinct, later capability, not
+  something this ERT should absorb.
+- **Change requests**: `change_requests` for budget/timeline changes on
+  an already-approved project, requiring the same `CSR.Project.Approve`
+  authority as the original approval and recorded through the existing
+  `governance_decisions` log — no parallel workflow engine.
+- **Timeline**: `computeMilestoneTimeline` positions milestones on a 0-100
+  scale between a project's start/end dates (falling back to the
+  earliest/latest milestone due date) — a real visualization from actual
+  data, not a scheduling engine.
+- **Kanban board**: a status-column milestone board on the project detail
+  page with click-to-advance actions — the same pattern ERT 4 already
+  shipped for the Grants pipeline — deliberately not drag-and-drop, since
+  that would mean adding a new frontend dependency for a first version.
+- **Portfolio rollup**: `computePortfolioRollup` aggregates programs,
+  project counts, and budget by status across an organization, surfaced
+  on a new `/corporate/portfolio` page.
+
+### Deferred, same policy as every phase above
+
+- **Resource Planning** (staffing/hours allocation) — no HR/staffing
+  data model exists anywhere in the schema; building it means inventing
+  an org structure no real customer has provided, the same reasoning
+  that deferred Cost Centers in ERT 5.
+- **Interactive drag-and-drop Gantt** (rescheduling, resource leveling)
+  — the honest version here is a real timeline visualization; a full
+  scheduling engine is a materially different, much larger product.
+- **The full enterprise Risk & Audit & Assurance platform** (heat maps,
+  CAPA, root-cause analysis, vendor risk) — a distinct capability this
+  ERT deliberately did not reach into; `project_risks` here is scoped to
+  a single project's log.

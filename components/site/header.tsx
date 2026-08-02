@@ -32,6 +32,7 @@ const solutionsColumns = [
       { href: "/compliance-automation", label: "Compliance Automation", description: "Records structured for CSR-2." },
       { href: "/grant-management", label: "Grant Management", description: "Proposal to renewal, one system of record." },
       { href: "/financial-operations", label: "Financial Operations", description: "Budget, utilization, and unspent-fund transfers." },
+      { href: "/project-execution", label: "Project Execution", description: "Programs, milestones, risks, and change requests." },
       { href: "/ai", label: "AI Capabilities", icon: Sparkles, description: "What's live, in progress, and roadmap." },
       { href: "/security", label: "Security & Trust", icon: ShieldCheck, description: "Auth, RBAC, and data handling." },
     ],

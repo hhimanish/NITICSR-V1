@@ -77,6 +77,7 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
   if (input.startDate !== undefined) setField("start_date", input.startDate);
   if (input.endDate !== undefined) setField("end_date", input.endDate);
   if (input.isOngoingProject !== undefined) setField("is_ongoing_project", input.isOngoingProject);
+  if (input.programId !== undefined) setField("program_id", input.programId);
 
   if (fields.length === 0) return apiError(400, "No fields to update");
 

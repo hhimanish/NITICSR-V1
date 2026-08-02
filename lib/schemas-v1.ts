@@ -54,6 +54,7 @@ export const UpdateCsrProjectSchema = z.object({
   endDate: z.string().date().optional(),
   rationale: z.string().max(1000).optional(),
   isOngoingProject: z.boolean().optional(),
+  programId: z.string().uuid().nullable().optional(),
 });
 
 export type UpdateCsrProjectInput = z.infer<typeof UpdateCsrProjectSchema>;
@@ -187,3 +188,70 @@ export const ReviewUnspentTransferSchema = z.object({
 });
 
 export type ReviewUnspentTransferInput = z.infer<typeof ReviewUnspentTransferSchema>;
+
+export const CreateMilestoneSchema = z.object({
+  title: z.string().min(2).max(200),
+  description: z.string().max(2000).optional(),
+  dueDate: z.string().date().optional(),
+});
+
+export type CreateMilestoneInput = z.infer<typeof CreateMilestoneSchema>;
+
+export const UpdateMilestoneSchema = z.object({
+  title: z.string().min(2).max(200).optional(),
+  description: z.string().max(2000).optional(),
+  dueDate: z.string().date().optional(),
+  status: z.enum(["pending", "in_progress", "completed", "delayed"]).optional(),
+  evidenceUrl: z.string().url().max(2000).optional(),
+});
+
+export type UpdateMilestoneInput = z.infer<typeof UpdateMilestoneSchema>;
+
+export const CreateMilestoneTaskSchema = z.object({
+  title: z.string().min(2).max(200),
+});
+
+export type CreateMilestoneTaskInput = z.infer<typeof CreateMilestoneTaskSchema>;
+
+export const CreateMilestoneDependencySchema = z.object({
+  dependsOnMilestoneId: z.string().uuid(),
+});
+
+export type CreateMilestoneDependencyInput = z.infer<typeof CreateMilestoneDependencySchema>;
+
+export const CreateProjectRiskSchema = z.object({
+  entryType: z.enum(["risk", "issue"]),
+  title: z.string().min(2).max(200),
+  description: z.string().max(2000).optional(),
+  severity: z.enum(["low", "medium", "high"]).optional(),
+});
+
+export type CreateProjectRiskInput = z.infer<typeof CreateProjectRiskSchema>;
+
+export const UpdateProjectRiskSchema = z.object({
+  status: z.enum(["open", "mitigated", "closed"]).optional(),
+  severity: z.enum(["low", "medium", "high"]).optional(),
+});
+
+export type UpdateProjectRiskInput = z.infer<typeof UpdateProjectRiskSchema>;
+
+export const CreateChangeRequestSchema = z.object({
+  field: z.enum(["budget_amount", "end_date"]),
+  requestedValue: z.string().min(1).max(100),
+  reason: z.string().max(1000).optional(),
+});
+
+export type CreateChangeRequestInput = z.infer<typeof CreateChangeRequestSchema>;
+
+export const ReviewChangeRequestSchema = z.object({
+  status: z.enum(["approved", "rejected"]),
+});
+
+export type ReviewChangeRequestInput = z.infer<typeof ReviewChangeRequestSchema>;
+
+export const CreateProgramSchema = z.object({
+  name: z.string().min(2).max(200),
+  description: z.string().max(2000).optional(),
+});
+
+export type CreateProgramInput = z.infer<typeof CreateProgramSchema>;

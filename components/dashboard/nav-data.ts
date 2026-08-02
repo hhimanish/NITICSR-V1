@@ -6,6 +6,7 @@ export type DashboardNavItem = {
 export const corporateNav: DashboardNavItem[] = [
   { href: "/corporate", label: "Dashboard" },
   { href: "/corporate/discovery", label: "NGO Discovery" },
+  { href: "/corporate/portfolio", label: "Portfolio" },
   { href: "/corporate/grants", label: "Grants" },
   { href: "/corporate/financials", label: "Financials" },
   { href: "/corporate/governance", label: "Governance" },

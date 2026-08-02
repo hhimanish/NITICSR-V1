@@ -61,6 +61,7 @@ lib/
   ngo-intelligence.ts  Honest NGO trust score (only real components — see ADR 0005 note above)
   grants.ts            Grant readiness score + disbursement ledger math (ERT 4)
   financial-operations.ts   Fiscal-year math, Section 135(5)/(6) unspent-fund transfers, honest forecast (ERT 5)
+  project-execution.ts Milestone timeline math, dependency-cycle check, portfolio rollup (ERT 6)
   cerebras.ts          AI Copilot client + prompt construction
   feature-flags.ts     Org-override-then-global-default flag reads
   notifications.ts, jobs.ts   Postgres-backed queue, no Redis (ADR 0003)

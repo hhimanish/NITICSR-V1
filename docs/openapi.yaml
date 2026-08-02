@@ -67,6 +67,235 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /organizations/{id}/programs:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List an organization's programs (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Create a program to group related projects (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+      responses:
+        "200": { description: Created }
+
+  /organizations/{id}/portfolio:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Portfolio rollup (requires CSR.Project.Read): total programs,
+        total projects, projects/budget by status, and per-program totals.
+      responses:
+        "200": { description: OK }
+
+  /csr-projects/{id}/milestones:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List a project's milestones (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Create a milestone (requires CSR.Project.Write) — the CRUD API the
+        `milestones` table has never had since it was added in Phase 2.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                dueDate: { type: string, format: date }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/milestones/{milestoneId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: milestoneId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Update a milestone, including status (requires CSR.Project.Write)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                dueDate: { type: string, format: date }
+                status: { type: string, enum: [pending, in_progress, completed, delayed] }
+                evidenceUrl: { type: string, format: uri }
+      responses:
+        "200": { description: Updated }
+
+  /csr-projects/{id}/milestones/{milestoneId}/tasks:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: milestoneId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List a milestone's sub-tasks (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Add a sub-task to a milestone (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/milestones/{milestoneId}/tasks/{taskId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: milestoneId, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Toggle a sub-task done/pending (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [pending, done] }
+      responses:
+        "200": { description: Updated }
+
+  /csr-projects/{id}/milestones/{milestoneId}/dependencies:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: milestoneId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List a milestone's dependencies (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Add a "depends on" link to another milestone on the same project
+        (requires CSR.Project.Write). Rejected if it would create a cycle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dependsOnMilestoneId]
+              properties:
+                dependsOnMilestoneId: { type: string, format: uuid }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/timeline:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        A real timeline visualization of milestones positioned between the
+        project's start and end date (requires CSR.Project.Read).
+      responses:
+        "200": { description: OK }
+
+  /csr-projects/{id}/risks:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List a project's risk/issue log (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Log a risk or issue (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entryType, title]
+              properties:
+                entryType: { type: string, enum: [risk, issue] }
+                title: { type: string }
+                description: { type: string }
+                severity: { type: string, enum: [low, medium, high] }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/risks/{riskId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: riskId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Update a risk/issue's status or severity (requires CSR.Project.Write)
+      responses:
+        "200": { description: Updated }
+
+  /csr-projects/{id}/change-requests:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List a project's change requests (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Propose a budget or end-date change (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [field, requestedValue]
+              properties:
+                field: { type: string, enum: [budget_amount, end_date] }
+                requestedValue: { type: string }
+                reason: { type: string }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/change-requests/{changeRequestId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: changeRequestId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: >
+        Approve or reject a pending change request (requires
+        CSR.Project.Approve — the same authority as the original project
+        approval). Applying the change updates the project directly.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [approved, rejected] }
+      responses:
+        "200": { description: Updated }
+
   /organizations/{id}/annual-budgets:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
   FileCheck2,
+  FolderKanban,
   Gavel,
   HandCoins,
   Landmark,
@@ -26,6 +27,7 @@ import type { DashboardNavItem } from "@/components/dashboard/nav-data";
 const iconByHref: Record<string, LucideIcon> = {
   "/corporate": LayoutDashboard,
   "/corporate/discovery": Search,
+  "/corporate/portfolio": FolderKanban,
   "/corporate/grants": HandCoins,
   "/corporate/financials": Landmark,
   "/corporate/governance": Gavel,

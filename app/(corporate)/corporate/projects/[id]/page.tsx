@@ -42,6 +42,7 @@ type Sdg = { id: number; name: string; colorHex: string };
 
 type ProjectDetail = {
   id: string;
+  corporate_org_id: string;
   title: string;
   description: string | null;
   status: string;
@@ -52,6 +53,7 @@ type ProjectDetail = {
   beneficiaries: Beneficiary[] | null;
   sdgs: Sdg[] | null;
   is_ongoing_project: boolean;
+  program_id: string | null;
 };
 
 const STATUSES = ["draft", "proposed", "approved", "active", "completed", "cancelled"];
@@ -91,6 +93,44 @@ type Forecast = {
   exhausted: boolean;
 } | null;
 
+type MilestoneRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  status: "pending" | "in_progress" | "completed" | "delayed";
+  evidence_url: string | null;
+};
+type TimelineEntry = { id: string; title: string; status: string; dueDate: string | null; positionPercent: number | null };
+type MilestoneTask = { id: string; title: string; status: "pending" | "done" };
+type MilestoneDependency = { id: string; depends_on_milestone_id: string; depends_on_title: string };
+type ProjectRisk = {
+  id: string;
+  entry_type: "risk" | "issue";
+  title: string;
+  description: string | null;
+  severity: "low" | "medium" | "high";
+  status: "open" | "mitigated" | "closed";
+  owner_name: string | null;
+};
+type ChangeRequest = {
+  id: string;
+  field: "budget_amount" | "end_date";
+  current_value: string;
+  requested_value: string;
+  reason: string | null;
+  status: "pending" | "approved" | "rejected";
+  requested_by_name: string | null;
+  created_at: string;
+};
+
+const MILESTONE_STAGES: { status: MilestoneRow["status"]; label: string }[] = [
+  { status: "pending", label: "Pending" },
+  { status: "in_progress", label: "In progress" },
+  { status: "completed", label: "Completed" },
+  { status: "delayed", label: "Delayed" },
+];
+
 export default function CsrProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [project, setProject] = useState<ProjectDetail | null>(null);
@@ -114,6 +154,45 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
   const [addingDisbursement, setAddingDisbursement] = useState(false);
   const [forecast, setForecast] = useState<Forecast>(null);
   const [renewing, setRenewing] = useState(false);
+
+  const [milestones, setMilestones] = useState<MilestoneRow[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
+  const [newMilestoneDueDate, setNewMilestoneDueDate] = useState("");
+  const [addingMilestone, setAddingMilestone] = useState(false);
+  const [expandedMilestoneId, setExpandedMilestoneId] = useState<string | null>(null);
+  const [tasksByMilestone, setTasksByMilestone] = useState<Record<string, MilestoneTask[]>>({});
+  const [dependenciesByMilestone, setDependenciesByMilestone] = useState<Record<string, MilestoneDependency[]>>({});
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [dependsOnId, setDependsOnId] = useState("");
+
+  const [risks, setRisks] = useState<ProjectRisk[]>([]);
+  const [newRiskTitle, setNewRiskTitle] = useState("");
+  const [newRiskType, setNewRiskType] = useState<"risk" | "issue">("risk");
+  const [newRiskSeverity, setNewRiskSeverity] = useState<"low" | "medium" | "high">("medium");
+  const [addingRisk, setAddingRisk] = useState(false);
+
+  const [programs, setPrograms] = useState<{ id: string; name: string }[]>([]);
+  const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
+  const [newChangeField, setNewChangeField] = useState<"budget_amount" | "end_date">("budget_amount");
+  const [newChangeValue, setNewChangeValue] = useState("");
+  const [newChangeReason, setNewChangeReason] = useState("");
+  const [submittingChange, setSubmittingChange] = useState(false);
+
+  function loadExecutionData() {
+    fetch(`/api/v1/csr-projects/${id}/milestones`)
+      .then((r) => r.json())
+      .then((body) => setMilestones(body.data ?? []));
+    fetch(`/api/v1/csr-projects/${id}/timeline`)
+      .then((r) => r.json())
+      .then((body) => setTimeline(body.data ?? []));
+    fetch(`/api/v1/csr-projects/${id}/risks`)
+      .then((r) => r.json())
+      .then((body) => setRisks(body.data ?? []));
+    fetch(`/api/v1/csr-projects/${id}/change-requests`)
+      .then((r) => r.json())
+      .then((body) => setChangeRequests(body.data ?? []));
+  }
 
   function loadGrantData() {
     fetch(`/api/v1/csr-projects/${id}/score`)
@@ -147,10 +226,27 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
       .then((body) => setCompliance(body.data ?? null))
       .catch(() => setCompliance(null));
     loadGrantData();
+    loadExecutionData();
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(reload, [id]);
+
+  useEffect(() => {
+    if (!project?.corporate_org_id) return;
+    fetch(`/api/v1/organizations/${project.corporate_org_id}/programs`)
+      .then((r) => r.json())
+      .then((body) => setPrograms(body.data ?? []));
+  }, [project?.corporate_org_id]);
+
+  async function assignProgram(programId: string) {
+    const res = await fetch(`/api/v1/csr-projects/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ programId: programId || null }),
+    });
+    if (res.ok) setProject((prev) => (prev ? { ...prev, program_id: programId || null } : prev));
+  }
 
   async function submitReview(e: React.FormEvent) {
     e.preventDefault();
@@ -222,6 +318,156 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
       if (res.ok) window.location.href = `/corporate/projects/${body.data.id}`;
     } finally {
       setRenewing(false);
+    }
+  }
+
+  async function addMilestone(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newMilestoneTitle.trim()) return;
+    setAddingMilestone(true);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}/milestones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newMilestoneTitle, dueDate: newMilestoneDueDate || undefined }),
+      });
+      if (res.ok) {
+        setNewMilestoneTitle("");
+        setNewMilestoneDueDate("");
+        loadExecutionData();
+      }
+    } finally {
+      setAddingMilestone(false);
+    }
+  }
+
+  async function setMilestoneStatus(milestoneId: string, status: MilestoneRow["status"]) {
+    const res = await fetch(`/api/v1/csr-projects/${id}/milestones/${milestoneId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) loadExecutionData();
+  }
+
+  function loadMilestoneDetail(milestoneId: string) {
+    fetch(`/api/v1/csr-projects/${id}/milestones/${milestoneId}/tasks`)
+      .then((r) => r.json())
+      .then((body) => setTasksByMilestone((prev) => ({ ...prev, [milestoneId]: body.data ?? [] })));
+    fetch(`/api/v1/csr-projects/${id}/milestones/${milestoneId}/dependencies`)
+      .then((r) => r.json())
+      .then((body) => setDependenciesByMilestone((prev) => ({ ...prev, [milestoneId]: body.data ?? [] })));
+  }
+
+  function toggleMilestoneExpand(milestoneId: string) {
+    if (expandedMilestoneId === milestoneId) {
+      setExpandedMilestoneId(null);
+      return;
+    }
+    setExpandedMilestoneId(milestoneId);
+    setDependsOnId("");
+    loadMilestoneDetail(milestoneId);
+  }
+
+  async function addTask(milestoneId: string) {
+    if (!newTaskTitle.trim()) return;
+    const res = await fetch(`/api/v1/csr-projects/${id}/milestones/${milestoneId}/tasks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newTaskTitle }),
+    });
+    if (res.ok) {
+      setNewTaskTitle("");
+      loadMilestoneDetail(milestoneId);
+    }
+  }
+
+  async function toggleTask(milestoneId: string, taskId: string, done: boolean) {
+    const res = await fetch(`/api/v1/csr-projects/${id}/milestones/${milestoneId}/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: done ? "done" : "pending" }),
+    });
+    if (res.ok) loadMilestoneDetail(milestoneId);
+  }
+
+  async function addDependency(milestoneId: string) {
+    if (!dependsOnId) return;
+    const res = await fetch(`/api/v1/csr-projects/${id}/milestones/${milestoneId}/dependencies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dependsOnMilestoneId: dependsOnId }),
+    });
+    const body = await res.json();
+    if (res.ok) {
+      setDependsOnId("");
+      loadMilestoneDetail(milestoneId);
+    } else {
+      setError(body.error ?? "Could not add dependency");
+    }
+  }
+
+  async function addRisk(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newRiskTitle.trim()) return;
+    setAddingRisk(true);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}/risks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entryType: newRiskType, title: newRiskTitle, severity: newRiskSeverity }),
+      });
+      if (res.ok) {
+        setNewRiskTitle("");
+        loadExecutionData();
+      }
+    } finally {
+      setAddingRisk(false);
+    }
+  }
+
+  async function updateRiskStatus(riskId: string, status: ProjectRisk["status"]) {
+    const res = await fetch(`/api/v1/csr-projects/${id}/risks/${riskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) loadExecutionData();
+  }
+
+  async function submitChangeRequest(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newChangeValue.trim()) return;
+    setSubmittingChange(true);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}/change-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          field: newChangeField,
+          requestedValue: newChangeValue,
+          reason: newChangeReason || undefined,
+        }),
+      });
+      if (res.ok) {
+        setNewChangeValue("");
+        setNewChangeReason("");
+        loadExecutionData();
+      }
+    } finally {
+      setSubmittingChange(false);
+    }
+  }
+
+  async function reviewChangeRequest(changeRequestId: string, status: "approved" | "rejected") {
+    const res = await fetch(`/api/v1/csr-projects/${id}/change-requests/${changeRequestId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      loadExecutionData();
+      reload();
     }
   }
 
@@ -349,6 +595,22 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
           >
             {project.is_ongoing_project ? "Ongoing (multi-year)" : "One-time"}
           </button>
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Program</p>
+          <Select value={project.program_id ?? ""} onValueChange={(v) => assignProgram(v ?? "")}>
+            <SelectTrigger className="mt-1 w-44" aria-label="Program">
+              <SelectValue placeholder="None" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">None</SelectItem>
+              {programs.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {project.status === "completed" && (
           <Button size="sm" variant="outline" className="ml-auto gap-1.5" disabled={renewing} onClick={renewProject}>
@@ -673,12 +935,310 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
 
       <section className="mt-6">
         <h2 className="font-heading text-lg font-semibold">Milestones</h2>
-        {!project.milestones || project.milestones.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">No milestones added yet.</p>
-        ) : (
-          <p className="mt-2 text-sm text-muted-foreground">{project.milestones.length} milestone(s).</p>
+
+        {timeline.filter((t) => t.positionPercent !== null).length > 0 && (
+          <div className="mt-3 rounded-2xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Timeline</p>
+            <div className="relative mt-4 h-8 rounded-full bg-muted">
+              {timeline
+                .filter((t) => t.positionPercent !== null)
+                .map((t) => (
+                  <div
+                    key={t.id}
+                    title={`${t.title}${t.dueDate ? ` — ${new Date(t.dueDate).toLocaleDateString("en-IN")}` : ""}`}
+                    className={cn(
+                      "absolute top-1/2 size-3 -translate-y-1/2 -translate-x-1/2 rounded-full border-2 border-background",
+                      t.status === "completed" ? "bg-secondary" : t.status === "delayed" ? "bg-destructive" : "bg-primary"
+                    )}
+                    style={{ left: `${t.positionPercent}%` }}
+                  />
+                ))}
+            </div>
+          </div>
         )}
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {MILESTONE_STAGES.map((stage) => {
+            const stageMilestones = milestones.filter((m) => m.status === stage.status);
+            return (
+              <div key={stage.status} className="rounded-2xl border border-border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">{stage.label}</h3>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {stageMilestones.length}
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {stageMilestones.map((m) => {
+                    const isOpen = expandedMilestoneId === m.id;
+                    const tasks = tasksByMilestone[m.id] ?? [];
+                    const deps = dependenciesByMilestone[m.id] ?? [];
+                    return (
+                      <div key={m.id} className="rounded-xl border border-border bg-background p-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleMilestoneExpand(m.id)}
+                          className="text-left text-sm font-medium hover:underline"
+                        >
+                          {m.title}
+                        </button>
+                        {m.due_date && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Due {new Date(m.due_date).toLocaleDateString("en-IN")}
+                          </p>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {MILESTONE_STAGES.filter((s) => s.status !== stage.status).map((s) => (
+                            <button
+                              key={s.status}
+                              type="button"
+                              onClick={() => setMilestoneStatus(m.id, s.status)}
+                              className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted"
+                            >
+                              → {s.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {isOpen && (
+                          <div className="mt-3 space-y-3 border-t border-border pt-3">
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase">Tasks</p>
+                              <ul className="mt-1.5 space-y-1">
+                                {tasks.map((t) => (
+                                  <li key={t.id} className="flex items-center gap-2 text-xs">
+                                    <input
+                                      type="checkbox"
+                                      checked={t.status === "done"}
+                                      onChange={(e) => toggleTask(m.id, t.id, e.target.checked)}
+                                    />
+                                    <span className={t.status === "done" ? "text-muted-foreground line-through" : ""}>
+                                      {t.title}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="mt-1.5 flex gap-1.5">
+                                <Input
+                                  placeholder="New task"
+                                  value={newTaskTitle}
+                                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                                  className="h-7 text-xs"
+                                />
+                                <Button size="xs" variant="outline" onClick={() => addTask(m.id)}>
+                                  Add
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase">Depends on</p>
+                              {deps.length > 0 && (
+                                <ul className="mt-1 space-y-0.5">
+                                  {deps.map((d) => (
+                                    <li key={d.id} className="text-xs text-muted-foreground">
+                                      {d.depends_on_title}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              <div className="mt-1.5 flex gap-1.5">
+                                <Select value={dependsOnId} onValueChange={(v) => v && setDependsOnId(v)}>
+                                  <SelectTrigger className="h-7 flex-1 text-xs" aria-label="Depends on milestone">
+                                    <SelectValue placeholder="Select milestone" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {milestones
+                                      .filter((other) => other.id !== m.id)
+                                      .map((other) => (
+                                        <SelectItem key={other.id} value={other.id}>
+                                          {other.title}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button size="xs" variant="outline" onClick={() => addDependency(m.id)}>
+                                  Link
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <form onSubmit={addMilestone} className="mt-4 flex flex-wrap gap-2">
+          <Input
+            placeholder="Milestone title"
+            value={newMilestoneTitle}
+            onChange={(e) => setNewMilestoneTitle(e.target.value)}
+            className="w-56"
+          />
+          <Input
+            type="date"
+            value={newMilestoneDueDate}
+            onChange={(e) => setNewMilestoneDueDate(e.target.value)}
+            className="w-40"
+          />
+          <Button type="submit" size="sm" variant="outline" disabled={addingMilestone || !newMilestoneTitle.trim()}>
+            Add milestone
+          </Button>
+        </form>
       </section>
+
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-heading text-lg font-semibold">Risks &amp; issues</h2>
+          <ul className="mt-3 space-y-2">
+            {risks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nothing logged yet.</p>
+            ) : (
+              risks.map((r) => (
+                <li key={r.id} className="rounded-lg border border-border p-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">
+                      <span
+                        className={cn(
+                          "mr-1.5 inline-block size-1.5 rounded-full",
+                          r.severity === "high" ? "bg-destructive" : r.severity === "medium" ? "bg-accent" : "bg-muted-foreground"
+                        )}
+                      />
+                      {r.title}
+                    </span>
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {r.entry_type} · {r.severity}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {(["open", "mitigated", "closed"] as const)
+                      .filter((s) => s !== r.status)
+                      .map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => updateRiskStatus(r.id, s)}
+                          className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted"
+                        >
+                          → {s}
+                        </button>
+                      ))}
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+          <form onSubmit={addRisk} className="mt-3 space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <Select value={newRiskType} onValueChange={(v) => v && setNewRiskType(v as "risk" | "issue")}>
+                <SelectTrigger className="w-28" aria-label="Type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="risk">Risk</SelectItem>
+                  <SelectItem value="issue">Issue</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={newRiskSeverity} onValueChange={(v) => v && setNewRiskSeverity(v as "low" | "medium" | "high")}>
+                <SelectTrigger className="w-28" aria-label="Severity">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Title"
+                value={newRiskTitle}
+                onChange={(e) => setNewRiskTitle(e.target.value)}
+                className="flex-1"
+              />
+              <Button type="submit" size="sm" variant="outline" disabled={addingRisk}>
+                Log
+              </Button>
+            </div>
+          </form>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-heading text-lg font-semibold">Change requests</h2>
+          <ul className="mt-3 space-y-2">
+            {changeRequests.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No change requests yet.</p>
+            ) : (
+              changeRequests.map((cr) => (
+                <li key={cr.id} className="rounded-lg border border-border p-3 text-sm">
+                  <p>
+                    <span className="font-medium capitalize">{cr.field.replace("_", " ")}</span>: {cr.current_value} →{" "}
+                    {cr.requested_value}
+                  </p>
+                  {cr.reason && <p className="mt-1 text-xs text-muted-foreground">{cr.reason}</p>}
+                  <div className="mt-2 flex items-center justify-between">
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-xs font-medium",
+                        cr.status === "approved"
+                          ? "bg-secondary/15 text-secondary"
+                          : cr.status === "rejected"
+                            ? "bg-destructive/15 text-destructive"
+                            : "bg-accent/15 text-accent-foreground"
+                      )}
+                    >
+                      {cr.status}
+                    </span>
+                    {cr.status === "pending" && (
+                      <div className="flex gap-1">
+                        <Button size="xs" variant="outline" onClick={() => reviewChangeRequest(cr.id, "approved")}>
+                          Approve
+                        </Button>
+                        <Button size="xs" variant="ghost" onClick={() => reviewChangeRequest(cr.id, "rejected")}>
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+          <form onSubmit={submitChangeRequest} className="mt-3 space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <Select value={newChangeField} onValueChange={(v) => v && setNewChangeField(v as "budget_amount" | "end_date")}>
+                <SelectTrigger className="w-40" aria-label="Field">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="budget_amount">Budget amount</SelectItem>
+                  <SelectItem value="end_date">End date</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder={newChangeField === "end_date" ? "YYYY-MM-DD" : "New amount"}
+                value={newChangeValue}
+                onChange={(e) => setNewChangeValue(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+            <Input
+              placeholder="Reason (optional)"
+              value={newChangeReason}
+              onChange={(e) => setNewChangeReason(e.target.value)}
+            />
+            <Button type="submit" size="sm" variant="outline" disabled={submittingChange}>
+              Submit request
+            </Button>
+          </form>
+        </section>
+      </div>
     </div>
   );
 }
