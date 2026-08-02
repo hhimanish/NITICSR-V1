@@ -67,6 +67,30 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /organizations/{id}/sdg-rollup:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Per-SDG rollup (requires CSR.Project.Read): project count, budget,
+        and beneficiary totals for each of the 17 UN goals, aggregated
+        from each project's own SDG tagging. No fabricated composite
+        sustainability score.
+      responses:
+        "200": { description: OK }
+
+  /organizations/{id}/social-impact-summary:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Beneficiary totals by category, alongside an indicative
+        CSR-category-to-BRSR-principle cross-reference (requires
+        CSR.Project.Read). The BRSR mapping is a static, factual SEBI
+        NGRBC taxonomy reference, not an official crosswalk.
+      responses:
+        "200": { description: OK }
+
   /organizations/{id}/alerts:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }

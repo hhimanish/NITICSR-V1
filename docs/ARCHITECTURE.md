@@ -952,3 +952,82 @@ actual capability here.
   configurable dashboard builder, scheduled reports, enterprise
   semantic search** — no vendor relationships or infrastructure for
   any of these exist.
+
+## ERT 9: ESG & Sustainability — real SDG/impact aggregation, no fabricated composite score
+
+The brief's headline dashboard asked for eight composite indices in one
+KPI row: Enterprise Sustainability Score, ESG Maturity Index, Climate
+Risk Score, Carbon Score, Water Score, Social Impact Index, Community
+Trust Score, Forecasted ESG Score. Every one of them needs primary data
+— emissions, water withdrawal, waste diversion, stakeholder-sentiment
+surveys, workforce diversity — that has never been captured anywhere in
+this schema and can't be conjured from what has. This is the same
+mistake ERT 3's NGO trust score and ERT 8's risk scoring were already
+refused for; refusing it a third time is the point, not an oversight.
+
+What's real: `project_sdgs` already tags every project against the 17
+UN goals (since Phase 2/6), `beneficiaries` already tracks real reach
+by category, and `csr_categories.schedule_vii_clause` already carries
+the Schedule VII mapping. ERT 9 is the aggregation layer over that —
+nothing new to collect, no new tables needed.
+
+### Completed this ERT
+
+- **SDG rollup** (`lib/esg.ts`'s `computeSdgRollup`): per-goal project
+  count, budget, and beneficiary totals, aggregated across an
+  organization's projects. Goal-level only — the brief's "169 Targets,
+  232 Indicators" granularity has no real data behind it at that
+  resolution.
+- **Social impact summary**: real beneficiary totals by category,
+  org-wide.
+- **BRSR principle cross-reference**: SEBI's 9 NGRBC principles are a
+  public, static taxonomy — mirrored as a constant the same way
+  `lib/csr-categories.ts` mirrors seed data — with an indicative
+  Schedule-VII-category-to-principle mapping. Explicitly labeled as
+  indicative, not an official SEBI crosswalk, and never presented as
+  BRSR-filing-ready.
+- **Sustainability & Impact Overview dashboard** (`/corporate/sustainability`):
+  one real page combining already-computed numbers from ERT 2
+  (compliance score), ERT 5 (fund utilization), ERT 8 (active control
+  alerts), and the new SDG/impact rollups — shown side by side, never
+  collapsed into a fabricated composite.
+- **Printable impact summary** (`/corporate/impact-report`): a
+  print-optimized export (`window.print()`, no new PDF-generation
+  dependency) explicitly labeled as an impact summary compiled from
+  platform records, not a GRI/BRSR/TCFD-certified filing.
+- **AI Copilot extended** with real SDG-coverage and beneficiary counts
+  — no Sustainability Score, no carbon/water figure.
+- `/esg` marketing page updated to describe what's actually measured,
+  including an explicit statement of what isn't (carbon, water, waste,
+  sentiment) and why.
+
+### Deferred, same policy as every phase above
+
+- **Carbon / Water / Waste / Biodiversity Intelligence** — zero
+  emissions, utility, or ecological data captured anywhere.
+- **ESG Data Fabric** (ERP/HRMS/IoT/satellite/utility-bill integrations
+  with lineage and quality scoring) — no vendor integrations exist.
+- **Materiality Intelligence** (stakeholder surveys, double-materiality
+  matrix, benchmarking) — ERT 7's survey infrastructure could carry a
+  stakeholder survey, but scoring "materiality" needs a methodology and
+  benchmark data that doesn't exist and shouldn't be invented.
+- **Responsible Supply Chain** — no vendor/supplier entity exists in
+  the schema.
+- **Stakeholder Intelligence** (sentiment analysis, influence mapping)
+  — no stakeholder engagement data exists at any volume.
+- **ESG Knowledge Graph / Digital Twin / Scenario Planning** — the
+  Knowledge Graph ask declined since Phase 2; scenario simulation needs
+  a calibrated model against historical outcomes that don't exist, same
+  reasoning as ERT 8's AI Risk Prediction refusal.
+- **ESG Assurance Platform** (external evidence sharing, digital
+  sign-off) — no file storage vendor, unchanged since Phase 6.
+- **Full multi-framework Reporting Studio** (BRSR/GRI/SASB/ISSB/TCFD
+  compliant generation, PPT/Word export) — needs data points that don't
+  exist; the honest printable impact summary is the real substitute.
+- **A dozen+ AI personas** (Carbon Advisor, Climate Advisor, ESG
+  Writer, Policy Generator...) — one real Copilot, extended.
+- **The `/apps /packages /services` monorepo restructure** — the same
+  microservices ask ADR 0005 has declined every time since Phase 2.
+- **CEO/CFO/COO/CSO/CRO/Board/Investor distinct workspaces** — one
+  real dashboard with real data, not seven personas wrapping the same
+  numbers.

@@ -73,6 +73,7 @@ export type CopilotContext = {
   } | null;
   ngoPartnerDocumentAlerts?: { ngoName: string; documentType: string; expiresAt: string }[];
   assurance?: { openRisks: number; overdueCapaItems: number; activeAlerts: number } | null;
+  sustainability?: { sdgsCovered: number; totalBeneficiaries: number } | null;
 };
 
 /** Grounds every answer in the caller's own org data only — no cross-tenant
@@ -93,12 +94,16 @@ Rules:
 - When asked about NGO partners, only cite the document-expiry alerts given — never invent or
   estimate an NGO's trust, risk, financial, or governance standing; that data isn't provided.
 - When asked about risk or assurance, cite only the counts given (open risks, overdue corrective
-  actions, active control alerts) — never invent a risk score, a fraud likelihood, or a prediction.`;
+  actions, active control alerts) — never invent a risk score, a fraud likelihood, or a prediction.
+- When asked about ESG or sustainability, cite only the SDG-coverage and beneficiary counts given
+  — never invent a Sustainability Score, ESG Maturity Index, carbon/water figure, or any composite
+  index; none of that data is captured on this platform.`;
 
   const user = `Organization: ${context.organizationName} (${context.organizationType})
 ${context.ngoProfile ? `NGO profile: ${JSON.stringify(context.ngoProfile)}\n` : ""}
 ${context.compliance ? `Compliance summary: ${JSON.stringify(context.compliance)}\n` : ""}
 ${context.assurance ? `Assurance summary: ${JSON.stringify(context.assurance)}\n` : ""}
+${context.sustainability ? `Sustainability summary: ${JSON.stringify(context.sustainability)}\n` : ""}
 ${
   context.ngoPartnerDocumentAlerts && context.ngoPartnerDocumentAlerts.length > 0
     ? `NGO partner documents expiring within 60 days: ${JSON.stringify(context.ngoPartnerDocumentAlerts)}\n`

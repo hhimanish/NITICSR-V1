@@ -6,11 +6,13 @@ import { UserButton } from "@clerk/nextjs";
 import {
   ClipboardList,
   FileCheck2,
+  FileText,
   FolderKanban,
   Gavel,
   HandCoins,
   Landmark,
   LayoutDashboard,
+  Leaf,
   Menu,
   Search,
   Settings,
@@ -34,6 +36,8 @@ const iconByHref: Record<string, LucideIcon> = {
   "/corporate/financials": Landmark,
   "/corporate/surveys": ClipboardList,
   "/corporate/assurance": ShieldAlert,
+  "/corporate/sustainability": Leaf,
+  "/corporate/impact-report": FileText,
   "/corporate/governance": Gavel,
   "/corporate/compliance": ShieldCheck,
   "/corporate/settings": Settings,
@@ -92,7 +96,7 @@ export function DashboardShell({
 }) {
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex print:hidden">
         <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-6 font-heading font-semibold">
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
             N
@@ -108,7 +112,7 @@ export function DashboardShell({
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border bg-background px-4 md:px-6">
+        <header className="flex h-16 items-center justify-between border-b border-border bg-background px-4 md:px-6 print:hidden">
           <div className="flex items-center gap-3">
             <Sheet>
               <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" />}>

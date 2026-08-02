@@ -11,6 +11,7 @@ export const corporateNav: DashboardNavItem[] = [
   { href: "/corporate/financials", label: "Financials" },
   { href: "/corporate/surveys", label: "Field Surveys" },
   { href: "/corporate/assurance", label: "Risk & Assurance" },
+  { href: "/corporate/sustainability", label: "Sustainability" },
   { href: "/corporate/governance", label: "Governance" },
   { href: "/corporate/compliance", label: "Compliance" },
   { href: "/corporate/settings", label: "Settings" },

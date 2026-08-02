@@ -66,6 +66,8 @@ lib/
                        computed inline via the existing Haversine SQL, not duplicated here
   assurance.ts         Continuous controls monitoring feed (ERT 8) — unifies checks already
                        computed elsewhere (ERT 2/3/5/6/7) plus two honest statistical anomaly checks
+  esg.ts               SDG rollup, social impact summary, static BRSR principle cross-reference (ERT 9)
+                       — no fabricated Sustainability Score or ESG Maturity Index
   cerebras.ts          AI Copilot client + prompt construction
   feature-flags.ts     Org-override-then-global-default flag reads
   notifications.ts, jobs.ts   Postgres-backed queue, no Redis (ADR 0003)

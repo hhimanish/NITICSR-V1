@@ -6,6 +6,7 @@ import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
 import { computeControlAlerts } from "@/lib/assurance";
 import { buildCopilotMessages, CEREBRAS_MODEL, getCerebrasClient } from "@/lib/cerebras";
 import { computeOrgComplianceSummary } from "@/lib/compliance";
+import { computeSdgRollup, computeSocialImpactSummary } from "@/lib/esg";
 import { getPool } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { requirePermission } from "@/lib/rbac";
@@ -134,6 +135,20 @@ export const POST = withApiErrors(async (req: NextRequest) => {
     };
   }
 
+  // Real SDG/impact summary — counts and totals only, never a fabricated
+  // "Sustainability Score." See lib/esg.ts.
+  let sustainabilitySummary: { sdgsCovered: number; totalBeneficiaries: number } | null = null;
+  if (!isNgo) {
+    const [sdgRollup, socialImpact] = await Promise.all([
+      computeSdgRollup(input.organizationId),
+      computeSocialImpactSummary(input.organizationId),
+    ]);
+    sustainabilitySummary = {
+      sdgsCovered: sdgRollup.filter((s) => s.projectCount > 0).length,
+      totalBeneficiaries: socialImpact.reduce((sum, s) => sum + s.totalCount, 0),
+    };
+  }
+
   let cerebras;
   try {
     cerebras = getCerebrasClient();
@@ -167,6 +182,7 @@ export const POST = withApiErrors(async (req: NextRequest) => {
       : null,
     ngoPartnerDocumentAlerts,
     assurance: assuranceSummary,
+    sustainability: sustainabilitySummary,
   };
 
   const completion = await cerebras.chat.completions.create({
