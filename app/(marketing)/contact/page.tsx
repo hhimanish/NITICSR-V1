@@ -7,6 +7,20 @@ import { FadeIn } from "@/components/motion/fade-in";
 export const metadata: Metadata = {
   title: "Contact",
   description: "Talk to the NITICSR team about your CSR program.",
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact — NITICSR",
+    description: "Talk to the NITICSR team about your CSR program.",
+    url: "/contact",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact — NITICSR",
+    description: "Talk to the NITICSR team about your CSR program.",
+  },
 };
 
 export default function ContactPage() {

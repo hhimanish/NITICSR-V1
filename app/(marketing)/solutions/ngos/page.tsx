@@ -6,6 +6,20 @@ import { SolutionPage } from "@/components/sections/solution-template";
 export const metadata: Metadata = {
   title: "NGOs",
   description: "Get discovered by verified corporate CSR budgets aligned to your cause.",
+  alternates: { canonical: "/solutions/ngos" },
+  openGraph: {
+    title: "NGOs — NITICSR",
+    description: "Get discovered by verified corporate CSR budgets aligned to your cause.",
+    url: "/solutions/ngos",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NGOs — NITICSR",
+    description: "Get discovered by verified corporate CSR budgets aligned to your cause.",
+  },
 };
 
 export default function NgoSolutionPage() {

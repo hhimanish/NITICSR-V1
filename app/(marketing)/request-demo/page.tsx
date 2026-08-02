@@ -7,6 +7,20 @@ import { FadeIn } from "@/components/motion/fade-in";
 export const metadata: Metadata = {
   title: "Request Enterprise Demo",
   description: "See NITICSR's AI matchmaking, verification, and compliance workflow for your organization.",
+  alternates: { canonical: "/request-demo" },
+  openGraph: {
+    title: "Request Enterprise Demo — NITICSR",
+    description: "See NITICSR's AI matchmaking, verification, and compliance workflow for your organization.",
+    url: "/request-demo",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Request Enterprise Demo — NITICSR",
+    description: "See NITICSR's AI matchmaking, verification, and compliance workflow for your organization.",
+  },
 };
 
 export default function RequestDemoPage() {

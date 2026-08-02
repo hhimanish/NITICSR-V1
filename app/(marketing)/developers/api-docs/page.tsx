@@ -9,6 +9,20 @@ import { loadOpenApiSpec } from "@/lib/openapi";
 export const metadata: Metadata = {
   title: "API Documentation",
   description: "REST API reference for the NITICSR platform.",
+  alternates: { canonical: "/developers/api-docs" },
+  openGraph: {
+    title: "API Documentation — NITICSR",
+    description: "REST API reference for the NITICSR platform.",
+    url: "/developers/api-docs",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "API Documentation — NITICSR",
+    description: "REST API reference for the NITICSR platform.",
+  },
 };
 
 const METHOD_STYLES: Record<string, string> = {

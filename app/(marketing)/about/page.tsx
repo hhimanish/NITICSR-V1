@@ -9,6 +9,20 @@ import { FadeIn } from "@/components/motion/fade-in";
 export const metadata: Metadata = {
   title: "About",
   description: "Why we're building NITICSR, India's enterprise CSR operating system.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About — NITICSR",
+    description: "Why we're building NITICSR, India's enterprise CSR operating system.",
+    url: "/about",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About — NITICSR",
+    description: "Why we're building NITICSR, India's enterprise CSR operating system.",
+  },
 };
 
 export default function AboutPage() {

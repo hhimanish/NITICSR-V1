@@ -9,6 +9,20 @@ import { productUpdates } from "@/lib/product-updates";
 export const metadata: Metadata = {
   title: "Product Updates",
   description: "What's shipped, improved, and fixed in NITICSR.",
+  alternates: { canonical: "/resources/product-updates" },
+  openGraph: {
+    title: "Product Updates — NITICSR",
+    description: "What's shipped, improved, and fixed in NITICSR.",
+    url: "/resources/product-updates",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Product Updates — NITICSR",
+    description: "What's shipped, improved, and fixed in NITICSR.",
+  },
 };
 
 const TAG_STYLES: Record<string, string> = {

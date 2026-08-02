@@ -6,6 +6,20 @@ import { SolutionPage } from "@/components/sections/solution-template";
 export const metadata: Metadata = {
   title: "Corporate CSR",
   description: "Discover, verify, and fund NGO partners without the compliance guesswork.",
+  alternates: { canonical: "/solutions/corporate" },
+  openGraph: {
+    title: "Corporate CSR — NITICSR",
+    description: "Discover, verify, and fund NGO partners without the compliance guesswork.",
+    url: "/solutions/corporate",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Corporate CSR — NITICSR",
+    description: "Discover, verify, and fund NGO partners without the compliance guesswork.",
+  },
 };
 
 export default function CorporateSolutionPage() {

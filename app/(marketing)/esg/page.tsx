@@ -6,6 +6,20 @@ import { SolutionPage } from "@/components/sections/solution-template";
 export const metadata: Metadata = {
   title: "ESG & Sustainability",
   description: "Track SDG alignment and environmental impact alongside CSR compliance.",
+  alternates: { canonical: "/esg" },
+  openGraph: {
+    title: "ESG & Sustainability — NITICSR",
+    description: "Track SDG alignment and environmental impact alongside CSR compliance.",
+    url: "/esg",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ESG & Sustainability — NITICSR",
+    description: "Track SDG alignment and environmental impact alongside CSR compliance.",
+  },
 };
 
 export default function EsgPage() {

@@ -6,6 +6,20 @@ import { SolutionPage } from "@/components/sections/solution-template";
 export const metadata: Metadata = {
   title: "Security & Trust",
   description: "How NITICSR handles authentication, authorization, and data.",
+  alternates: { canonical: "/security" },
+  openGraph: {
+    title: "Security & Trust — NITICSR",
+    description: "How NITICSR handles authentication, authorization, and data.",
+    url: "/security",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Security & Trust — NITICSR",
+    description: "How NITICSR handles authentication, authorization, and data.",
+  },
 };
 
 export default function SecurityPage() {

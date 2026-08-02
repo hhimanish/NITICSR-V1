@@ -10,6 +10,20 @@ import { StaggerGroup, StaggerItem } from "@/components/motion/stagger-reveal";
 export const metadata: Metadata = {
   title: "Careers",
   description: "We're building the team behind NITICSR.",
+  alternates: { canonical: "/careers" },
+  openGraph: {
+    title: "Careers — NITICSR",
+    description: "We're building the team behind NITICSR.",
+    url: "/careers",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Careers — NITICSR",
+    description: "We're building the team behind NITICSR.",
+  },
 };
 
 const values = [

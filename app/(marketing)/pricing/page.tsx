@@ -11,6 +11,20 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Pricing",
   description: "Simple, transparent tiers for CSR discovery, verification, and compliance.",
+  alternates: { canonical: "/pricing" },
+  openGraph: {
+    title: "Pricing — NITICSR",
+    description: "Simple, transparent tiers for CSR discovery, verification, and compliance.",
+    url: "/pricing",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pricing — NITICSR",
+    description: "Simple, transparent tiers for CSR discovery, verification, and compliance.",
+  },
 };
 
 const tiers = [

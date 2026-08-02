@@ -10,6 +10,20 @@ import { StaggerGroup, StaggerItem } from "@/components/motion/stagger-reveal";
 export const metadata: Metadata = {
   title: "Developer Portal",
   description: "Build on the NITICSR platform API.",
+  alternates: { canonical: "/developers" },
+  openGraph: {
+    title: "Developer Portal — NITICSR",
+    description: "Build on the NITICSR platform API.",
+    url: "/developers",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Developer Portal — NITICSR",
+    description: "Build on the NITICSR platform API.",
+  },
 };
 
 const cards = [

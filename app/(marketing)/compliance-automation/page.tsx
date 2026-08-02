@@ -6,6 +6,20 @@ import { SolutionPage } from "@/components/sections/solution-template";
 export const metadata: Metadata = {
   title: "Compliance Automation",
   description: "Schedule VII compliance workflows that generate their own documentation.",
+  alternates: { canonical: "/compliance-automation" },
+  openGraph: {
+    title: "Compliance Automation — NITICSR",
+    description: "Schedule VII compliance workflows that generate their own documentation.",
+    url: "/compliance-automation",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Compliance Automation — NITICSR",
+    description: "Schedule VII compliance workflows that generate their own documentation.",
+  },
 };
 
 export default function ComplianceAutomationPage() {

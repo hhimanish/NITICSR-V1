@@ -6,6 +6,20 @@ import { SolutionPage } from "@/components/sections/solution-template";
 export const metadata: Metadata = {
   title: "Platform",
   description: "One operating system for CSR discovery, verification, and compliance.",
+  alternates: { canonical: "/platform" },
+  openGraph: {
+    title: "Platform — NITICSR",
+    description: "One operating system for CSR discovery, verification, and compliance.",
+    url: "/platform",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Platform — NITICSR",
+    description: "One operating system for CSR discovery, verification, and compliance.",
+  },
 };
 
 export default function PlatformPage() {

@@ -10,7 +10,21 @@ export const metadata: Metadata = {
   title: "Knowledge Center",
   description: "Practical guides on CSR compliance, NGO due diligence, and Schedule VII in India.",
   alternates: {
+    canonical: "/blog",
     types: { "application/rss+xml": "/blog/rss.xml" },
+  },
+  openGraph: {
+    title: "Knowledge Center — NITICSR",
+    description: "Practical guides on CSR compliance, NGO due diligence, and Schedule VII in India.",
+    url: "/blog",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Knowledge Center — NITICSR",
+    description: "Practical guides on CSR compliance, NGO due diligence, and Schedule VII in India.",
   },
 };
 

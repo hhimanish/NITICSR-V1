@@ -9,6 +9,20 @@ import { StaggerGroup, StaggerItem } from "@/components/motion/stagger-reveal";
 export const metadata: Metadata = {
   title: "Resources",
   description: "Guides, case studies, and product updates from NITICSR.",
+  alternates: { canonical: "/resources" },
+  openGraph: {
+    title: "Resources — NITICSR",
+    description: "Guides, case studies, and product updates from NITICSR.",
+    url: "/resources",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Resources — NITICSR",
+    description: "Guides, case studies, and product updates from NITICSR.",
+  },
 };
 
 const resources = [

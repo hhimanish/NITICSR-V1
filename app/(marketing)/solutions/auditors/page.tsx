@@ -6,6 +6,20 @@ import { SolutionPage } from "@/components/sections/solution-template";
 export const metadata: Metadata = {
   title: "Auditors",
   description: "Independent verification tooling for Schedule VII compliance review.",
+  alternates: { canonical: "/solutions/auditors" },
+  openGraph: {
+    title: "Auditors — NITICSR",
+    description: "Independent verification tooling for Schedule VII compliance review.",
+    url: "/solutions/auditors",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Auditors — NITICSR",
+    description: "Independent verification tooling for Schedule VII compliance review.",
+  },
 };
 
 export default function AuditorSolutionPage() {

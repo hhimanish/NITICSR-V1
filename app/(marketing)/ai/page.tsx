@@ -11,6 +11,20 @@ import { FinalCta } from "@/components/sections/final-cta";
 export const metadata: Metadata = {
   title: "AI Capabilities",
   description: "How NITICSR uses AI for matchmaking today, and what's next.",
+  alternates: { canonical: "/ai" },
+  openGraph: {
+    title: "AI Capabilities — NITICSR",
+    description: "How NITICSR uses AI for matchmaking today, and what's next.",
+    url: "/ai",
+    siteName: "NITICSR",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Capabilities — NITICSR",
+    description: "How NITICSR uses AI for matchmaking today, and what's next.",
+  },
 };
 
 const capabilities = [
