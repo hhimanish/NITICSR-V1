@@ -680,3 +680,68 @@ this ERT's diff to touch every marketing page.
   fixed and deterministic by design; a generalized rubric engine has the
   same "no concrete backlog to generalize from" problem as every
   workflow/rules-engine deferral so far.
+
+## ERT 5: Financial Operations — the unspent-fund rule the site already promised
+
+The compliance-automation marketing page has claimed since Phase 3 that
+"unspent-fund transfer windows are tracked automatically, not on a
+spreadsheet." Until this ERT, that was aspirational copy — nothing in
+the schema modeled Section 135(5)/(6) at all. That gap, found while
+scoping this ERT, became its anchor: build the real rule the site was
+already claiming, rather than the brief's full finance-suite list.
+
+Section 135(5)/(6) requires a company's unspent CSR amount to move
+somewhere specific by a strict deadline: for an *ongoing* project
+(multi-year, sanctioned in advance — a designation a company makes in
+its own board resolution, not something to infer from start/end dates),
+the unspent amount goes to a special "Unspent CSR Account" within 30
+days of the financial year end; for any other project, it goes to a
+Schedule VII fund within 6 months. `lib/financial-operations.ts`'s
+`generateUnspentFundTransferIfNeeded` computes this from real numbers
+only — a project's `budget_amount` minus what ERT 4's disbursement
+ledger actually shows disbursed — the moment a project is marked
+`completed`, exactly mirroring how ERT 2/4 already generate obligations
+on a status transition.
+
+### Completed this ERT
+
+- **Annual CSR budget**: `annual_csr_budgets` — the organization's
+  declared obligation per fiscal year (Apr–Mar), set via
+  `/organizations/:id/annual-budgets`.
+- **Unspent-fund transfer register**: `unspent_fund_transfers`,
+  auto-generated on project completion, tracked pending → transferred
+  with an optional transfer reference — the real capability behind the
+  Phase 3 marketing claim, finally built.
+- **Fund utilization dashboard**: `computeOrgFundUtilization` blends the
+  annual budget, in-fiscal-year disbursements, total allocated across
+  projects, and pending unspent transfers into one view — surfaced on a
+  new `/corporate/financials` page and as a KPI tile on the Corporate
+  dashboard.
+- **Expense categorization**: `disbursements` gained `vendor_name`,
+  `expense_category`, `invoice_reference` — audit-ready line items
+  without an accounts-payable system or file upload pipeline.
+- **Disbursement pace forecast**: `computeDisbursementForecast` is an
+  honest linear projection from a project's real disbursement history
+  — returns `null` with fewer than two disbursements to extrapolate
+  from, never a fabricated model.
+- **Public `/financial-operations` page**, following the per-page
+  OG/Twitter/canonical metadata pattern established for every marketing
+  page.
+
+### Deferred, same policy as every phase above
+
+- **Payments / Escrow with real fund movement** — no payment processor
+  or nodal bank account integrated; same reasoning ERT 4 already applied
+  to its disbursement ledger.
+- **General Ledger / ERP integration** — no SAP/Tally/Zoho Books account
+  or API relationship exists to integrate with.
+- **Treasury** (cash position, bank balances) — needs real banking
+  integration; nothing to connect to.
+- **Cost Centers** — would require inventing an internal
+  department/business-unit hierarchy that doesn't exist anywhere in the
+  schema; building it now means guessing at org structure no real
+  customer has provided.
+- **A verified vendor master** (GST/PAN validation) — that's the
+  NGO-verification pipeline pattern applied to an entity nobody asked
+  for; `vendor_name` stays a plain text field on the disbursement ledger
+  instead.

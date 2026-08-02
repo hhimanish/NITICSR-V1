@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
 import { generateObligationsForProject } from "@/lib/compliance";
 import { getPool } from "@/lib/db";
+import { generateUnspentFundTransferIfNeeded } from "@/lib/financial-operations";
 import { recordDecision } from "@/lib/governance";
 import { can, requirePermission } from "@/lib/rbac";
 import { UpdateCsrProjectSchema } from "@/lib/schemas-v1";
@@ -75,12 +76,14 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
   if (input.ngoProfileId !== undefined) setField("ngo_profile_id", input.ngoProfileId);
   if (input.startDate !== undefined) setField("start_date", input.startDate);
   if (input.endDate !== undefined) setField("end_date", input.endDate);
+  if (input.isOngoingProject !== undefined) setField("is_ongoing_project", input.isOngoingProject);
 
   if (fields.length === 0) return apiError(400, "No fields to update");
 
   values.push(id);
   const { rows } = await getPool().query(
-    `UPDATE csr_projects SET ${fields.join(", ")} WHERE id = $${values.length} RETURNING id, title, status`,
+    `UPDATE csr_projects SET ${fields.join(", ")} WHERE id = $${values.length}
+     RETURNING id, title, status, budget_amount, is_ongoing_project`,
     values
   );
 
@@ -94,6 +97,16 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
       rationale: input.rationale,
     });
     await generateObligationsForProject(corporateOrgId, id);
+  }
+
+  if (input.status === "completed") {
+    await generateUnspentFundTransferIfNeeded(
+      id,
+      corporateOrgId,
+      rows[0].is_ongoing_project,
+      rows[0].budget_amount ? Number(rows[0].budget_amount) : null,
+      new Date()
+    );
   }
 
   return apiSuccess(rows[0]);

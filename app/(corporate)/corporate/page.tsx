@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Gavel, HandCoins, ShieldCheck, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, Gavel, HandCoins, Landmark, ShieldCheck, TrendingUp, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { KpiTile } from "@/components/dashboard/kpi-tile";
@@ -27,6 +27,7 @@ export default function CorporateDashboardPage() {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [decisionCount, setDecisionCount] = useState<number | null>(null);
   const [complianceScore, setComplianceScore] = useState<number | null>(null);
+  const [fundUtilizationPercent, setFundUtilizationPercent] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`/api/v1/csr-projects?organizationId=${org.id}&limit=50`)
@@ -48,6 +49,16 @@ export default function CorporateDashboardPage() {
       .then((r) => r.json())
       .then((body) => setComplianceScore(body.data?.averageScore ?? null))
       .catch(() => setComplianceScore(null));
+
+    fetch(`/api/v1/organizations/${org.id}/fund-utilization`)
+      .then((r) => r.json())
+      .then((body) => {
+        const u = body.data;
+        setFundUtilizationPercent(
+          u?.annualBudget ? Math.min(100, Math.round((u.disbursedInFiscalYear / u.annualBudget) * 100)) : null
+        );
+      })
+      .catch(() => setFundUtilizationPercent(null));
   }, [org.id]);
 
   const totalBudget = (projects ?? []).reduce(
@@ -70,7 +81,10 @@ export default function CorporateDashboardPage() {
           <h1 className="font-heading text-2xl font-semibold">{org.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">Corporate CSR workspace</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" render={<Link href="/corporate/financials" />}>
+            Financials
+          </Button>
           <Button variant="outline" render={<Link href="/corporate/governance" />}>
             Governance
           </Button>
@@ -78,7 +92,7 @@ export default function CorporateDashboardPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiTile icon={Users} label="NGO partners" value={String(ngoCount)} />
         <KpiTile
           icon={HandCoins}
@@ -102,6 +116,12 @@ export default function CorporateDashboardPage() {
           icon={ShieldCheck}
           label="Compliance score"
           value={complianceScore === null ? "—" : `${complianceScore}%`}
+        />
+        <KpiTile
+          icon={Landmark}
+          label="Fund utilization (FY)"
+          value={fundUtilizationPercent === null ? "—" : `${fundUtilizationPercent}%`}
+          hint={fundUtilizationPercent === null ? "Set an annual budget" : undefined}
         />
       </div>
 

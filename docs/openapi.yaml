@@ -67,6 +67,75 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /organizations/{id}/annual-budgets:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List an organization's declared annual CSR budgets by fiscal year (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Create or update the annual CSR budget for a fiscal year (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fiscalYear, budgetAmount]
+              properties:
+                fiscalYear: { type: string, example: "2025-26" }
+                budgetAmount: { type: number }
+      responses:
+        "200": { description: Upserted }
+
+  /organizations/{id}/fund-utilization:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Aggregate fund utilization for a fiscal year (requires CSR.Project.Read):
+        annual budget, disbursed-in-FY, total allocated across projects, and
+        pending unspent-fund transfers.
+      parameters:
+        - { name: fiscalYear, in: query, schema: { type: string, example: "2025-26" } }
+      responses:
+        "200": { description: OK }
+
+  /organizations/{id}/unspent-fund-transfers:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List an organization's Section 135(5)/(6) unspent-fund transfer obligations (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+
+  /unspent-fund-transfers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Mark an unspent-fund transfer complete (requires CSR.Project.Write)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transferReference: { type: string }
+      responses:
+        "200": { description: Updated }
+
+  /csr-projects/{id}/forecast:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        An honest linear disbursement-pace projection (requires CSR.Project.Read).
+        Returns null with fewer than two disbursements recorded — never a
+        fabricated forecast.
+      responses:
+        "200": { description: OK }
+
   /csr-projects/{id}/reviews:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -162,6 +231,9 @@ paths:
                 milestoneId: { type: string, format: uuid }
                 amount: { type: number }
                 note: { type: string }
+                vendorName: { type: string }
+                expenseCategory: { type: string }
+                invoiceReference: { type: string }
       responses:
         "200": { description: Created }
 

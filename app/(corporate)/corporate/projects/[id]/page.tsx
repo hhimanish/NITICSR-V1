@@ -51,6 +51,7 @@ type ProjectDetail = {
   milestones: unknown[] | null;
   beneficiaries: Beneficiary[] | null;
   sdgs: Sdg[] | null;
+  is_ongoing_project: boolean;
 };
 
 const STATUSES = ["draft", "proposed", "approved", "active", "completed", "cancelled"];
@@ -69,11 +70,26 @@ type ProposalScore = {
 };
 type Review = { id: string; recommendation: string; notes: string | null; created_at: string; reviewed_by_name: string | null };
 type Agreement = { id: string; terms: string; acknowledged_at: string | null; acknowledged_by_name: string | null } | null;
-type Disbursement = { id: string; amount: string; note: string | null; created_at: string; recorded_by_name: string | null };
+type Disbursement = {
+  id: string;
+  amount: string;
+  note: string | null;
+  vendor_name: string | null;
+  expense_category: string | null;
+  invoice_reference: string | null;
+  created_at: string;
+  recorded_by_name: string | null;
+};
 type DisbursementData = {
   disbursements: Disbursement[];
   summary: { totalDisbursed: number; budgetAmount: number | null; remaining: number | null; percentUsed: number | null };
 };
+type Forecast = {
+  remainingBudget: number;
+  dailyRate: number;
+  projectedExhaustionDate: string | null;
+  exhausted: boolean;
+} | null;
 
 export default function CsrProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -92,7 +108,11 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
   const [disbursementData, setDisbursementData] = useState<DisbursementData | null>(null);
   const [disbursementAmount, setDisbursementAmount] = useState("");
   const [disbursementNote, setDisbursementNote] = useState("");
+  const [disbursementVendor, setDisbursementVendor] = useState("");
+  const [disbursementCategory, setDisbursementCategory] = useState("");
+  const [disbursementInvoiceRef, setDisbursementInvoiceRef] = useState("");
   const [addingDisbursement, setAddingDisbursement] = useState(false);
+  const [forecast, setForecast] = useState<Forecast>(null);
   const [renewing, setRenewing] = useState(false);
 
   function loadGrantData() {
@@ -112,6 +132,10 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
     fetch(`/api/v1/csr-projects/${id}/disbursements`)
       .then((r) => r.json())
       .then((body) => setDisbursementData(body.data ?? null));
+    fetch(`/api/v1/csr-projects/${id}/forecast`)
+      .then((r) => r.json())
+      .then((body) => setForecast(body.data ?? null))
+      .catch(() => setForecast(null));
   }
 
   function reload() {
@@ -169,11 +193,20 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
       const res = await fetch(`/api/v1/csr-projects/${id}/disbursements`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, note: disbursementNote || undefined }),
+        body: JSON.stringify({
+          amount,
+          note: disbursementNote || undefined,
+          vendorName: disbursementVendor || undefined,
+          expenseCategory: disbursementCategory || undefined,
+          invoiceReference: disbursementInvoiceRef || undefined,
+        }),
       });
       if (res.ok) {
         setDisbursementAmount("");
         setDisbursementNote("");
+        setDisbursementVendor("");
+        setDisbursementCategory("");
+        setDisbursementInvoiceRef("");
         loadGrantData();
       }
     } finally {
@@ -208,6 +241,20 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
       setError(err instanceof Error ? err.message : "Could not update status");
     } finally {
       setUpdating(false);
+    }
+  }
+
+  async function toggleOngoing() {
+    const next = !project?.is_ongoing_project;
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isOngoingProject: next }),
+      });
+      if (res.ok) setProject((prev) => (prev ? { ...prev, is_ongoing_project: next } : prev));
+    } catch {
+      // best-effort — the toggle simply won't flip if this fails
     }
   }
 
@@ -293,6 +340,16 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
             </p>
           </div>
         )}
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project type</p>
+          <button
+            type="button"
+            onClick={toggleOngoing}
+            className="mt-1 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
+          >
+            {project.is_ongoing_project ? "Ongoing (multi-year)" : "One-time"}
+          </button>
+        </div>
         {project.status === "completed" && (
           <Button size="sm" variant="outline" className="ml-auto gap-1.5" disabled={renewing} onClick={renewProject}>
             <RefreshCw className="size-3.5" />
@@ -481,14 +538,29 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
             </p>
           </div>
         )}
+        {forecast && !forecast.exhausted && forecast.projectedExhaustionDate && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            At the current disbursement pace, the remaining ₹{forecast.remainingBudget.toLocaleString("en-IN")} is
+            projected to be exhausted by {new Date(forecast.projectedExhaustionDate).toLocaleDateString("en-IN")}.
+          </p>
+        )}
         <ul className="mt-3 space-y-1.5">
           {(disbursementData?.disbursements ?? []).map((d) => (
-            <li key={d.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
-              <span>
-                ₹{Number(d.amount).toLocaleString("en-IN")}
-                {d.note ? ` — ${d.note}` : ""}
-              </span>
-              <span className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString("en-IN")}</span>
+            <li key={d.id} className="rounded-lg border border-border px-3 py-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span>
+                  ₹{Number(d.amount).toLocaleString("en-IN")}
+                  {d.note ? ` — ${d.note}` : ""}
+                </span>
+                <span className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString("en-IN")}</span>
+              </div>
+              {(d.vendor_name || d.expense_category || d.invoice_reference) && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {[d.vendor_name, d.expense_category, d.invoice_reference && `Inv. ${d.invoice_reference}`]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
             </li>
           ))}
         </ul>
@@ -500,13 +572,31 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
             placeholder="Amount"
             value={disbursementAmount}
             onChange={(e) => setDisbursementAmount(e.target.value)}
-            className="w-36"
+            className="w-32"
           />
           <Input
             placeholder="Note (optional)"
             value={disbursementNote}
             onChange={(e) => setDisbursementNote(e.target.value)}
-            className="w-56"
+            className="w-40"
+          />
+          <Input
+            placeholder="Vendor (optional)"
+            value={disbursementVendor}
+            onChange={(e) => setDisbursementVendor(e.target.value)}
+            className="w-40"
+          />
+          <Input
+            placeholder="Category (optional)"
+            value={disbursementCategory}
+            onChange={(e) => setDisbursementCategory(e.target.value)}
+            className="w-36"
+          />
+          <Input
+            placeholder="Invoice ref (optional)"
+            value={disbursementInvoiceRef}
+            onChange={(e) => setDisbursementInvoiceRef(e.target.value)}
+            className="w-36"
           />
           <Button type="submit" size="sm" variant="outline" disabled={addingDisbursement}>
             Record disbursement

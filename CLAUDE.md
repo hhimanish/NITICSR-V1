@@ -59,6 +59,8 @@ lib/
   governance.ts        Immutable decision log (recordDecision)
   compliance.ts        Compliance obligations + deterministic gap checks + score
   ngo-intelligence.ts  Honest NGO trust score (only real components — see ADR 0005 note above)
+  grants.ts            Grant readiness score + disbursement ledger math (ERT 4)
+  financial-operations.ts   Fiscal-year math, Section 135(5)/(6) unspent-fund transfers, honest forecast (ERT 5)
   cerebras.ts          AI Copilot client + prompt construction
   feature-flags.ts     Org-override-then-global-default flag reads
   notifications.ts, jobs.ts   Postgres-backed queue, no Redis (ADR 0003)

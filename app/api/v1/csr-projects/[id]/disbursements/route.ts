@@ -31,7 +31,8 @@ export const GET = withApiErrors(async (req: NextRequest, ctx: RouteContext) => 
   const pool = getPool();
   const [{ rows: disbursements }, summary] = await Promise.all([
     pool.query(
-      `SELECT d.id, d.milestone_id, d.amount, d.note, d.created_at, u.full_name AS recorded_by_name
+      `SELECT d.id, d.milestone_id, d.amount, d.note, d.vendor_name, d.expense_category,
+              d.invoice_reference, d.created_at, u.full_name AS recorded_by_name
          FROM disbursements d
          LEFT JOIN users u ON u.id = d.recorded_by
         WHERE d.csr_project_id = $1
@@ -65,10 +66,20 @@ export const POST = withApiErrors(async (req: NextRequest, ctx: RouteContext) =>
 
   const user = await findUserByClerkId(userId);
   const { rows } = await getPool().query(
-    `INSERT INTO disbursements (csr_project_id, milestone_id, amount, note, recorded_by)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, milestone_id, amount, note, created_at`,
-    [id, input.milestoneId ?? null, input.amount, input.note ?? null, user?.id ?? null]
+    `INSERT INTO disbursements
+       (csr_project_id, milestone_id, amount, note, vendor_name, expense_category, invoice_reference, recorded_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id, milestone_id, amount, note, vendor_name, expense_category, invoice_reference, created_at`,
+    [
+      id,
+      input.milestoneId ?? null,
+      input.amount,
+      input.note ?? null,
+      input.vendorName ?? null,
+      input.expenseCategory ?? null,
+      input.invoiceReference ?? null,
+      user?.id ?? null,
+    ]
   );
   return apiSuccess(rows[0]);
 });

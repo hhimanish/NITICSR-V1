@@ -53,6 +53,7 @@ export const UpdateCsrProjectSchema = z.object({
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
   rationale: z.string().max(1000).optional(),
+  isOngoingProject: z.boolean().optional(),
 });
 
 export type UpdateCsrProjectInput = z.infer<typeof UpdateCsrProjectSchema>;
@@ -167,6 +168,22 @@ export const CreateDisbursementSchema = z.object({
   milestoneId: z.string().uuid().optional(),
   amount: z.number().positive(),
   note: z.string().max(1000).optional(),
+  vendorName: z.string().max(200).optional(),
+  expenseCategory: z.string().max(100).optional(),
+  invoiceReference: z.string().max(200).optional(),
 });
 
 export type CreateDisbursementInput = z.infer<typeof CreateDisbursementSchema>;
+
+export const UpsertAnnualBudgetSchema = z.object({
+  fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, "Fiscal year must be like '2025-26'"),
+  budgetAmount: z.number().nonnegative(),
+});
+
+export type UpsertAnnualBudgetInput = z.infer<typeof UpsertAnnualBudgetSchema>;
+
+export const ReviewUnspentTransferSchema = z.object({
+  transferReference: z.string().max(200).optional(),
+});
+
+export type ReviewUnspentTransferInput = z.infer<typeof ReviewUnspentTransferSchema>;
