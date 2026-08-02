@@ -4,37 +4,29 @@ import { NextRequest } from "next/server";
 import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
 import { getPool } from "@/lib/db";
 import { requirePermission } from "@/lib/rbac";
-import { CreateProjectRiskSchema } from "@/lib/schemas-v1";
+import { CreateOrgRiskSchema } from "@/lib/schemas-v1";
 import { findUserByClerkId } from "@/lib/users-repo";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-async function loadProjectOrgId(projectId: string) {
-  const { rows } = await getPool().query(
-    `SELECT corporate_org_id FROM csr_projects WHERE id = $1 AND deleted_at IS NULL`,
-    [projectId]
-  );
-  return rows[0]?.corporate_org_id ?? null;
-}
-
+/** The organization-wide risk register — project_risks (ERT 6) extended to
+ * also hold entries with no project at all, per ERT 8. */
 export const GET = withApiErrors(async (req: NextRequest, ctx: RouteContext) => {
   const { userId } = await auth();
   if (!userId) return apiError(401, "Not authenticated");
 
-  const { id } = await ctx.params;
-  const corporateOrgId = await loadProjectOrgId(id);
-  if (!corporateOrgId) return apiError(404, "Project not found");
-
-  await requirePermission(userId, corporateOrgId, "CSR.Project.Read");
+  const { id: organizationId } = await ctx.params;
+  await requirePermission(userId, organizationId, "CSR.Project.Read");
 
   const { rows } = await getPool().query(
     `SELECT pr.id, pr.entry_type, pr.title, pr.description, pr.severity, pr.status,
-            pr.created_at, u.full_name AS owner_name
+            pr.created_at, u.full_name AS owner_name, p.title AS project_title
        FROM project_risks pr
        LEFT JOIN users u ON u.id = pr.owner_user_id
-      WHERE pr.csr_project_id = $1
+       LEFT JOIN csr_projects p ON p.id = pr.csr_project_id
+      WHERE pr.organization_id = $1
       ORDER BY CASE pr.severity WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, pr.created_at DESC`,
-    [id]
+    [organizationId]
   );
   return apiSuccess(rows);
 });
@@ -43,12 +35,17 @@ export const POST = withApiErrors(async (req: NextRequest, ctx: RouteContext) =>
   const { userId } = await auth();
   if (!userId) return apiError(401, "Not authenticated");
 
-  const { id } = await ctx.params;
-  const corporateOrgId = await loadProjectOrgId(id);
-  if (!corporateOrgId) return apiError(404, "Project not found");
+  const { id: organizationId } = await ctx.params;
+  const input = CreateOrgRiskSchema.parse(await req.json());
+  await requirePermission(userId, organizationId, "CSR.Project.Write");
 
-  const input = CreateProjectRiskSchema.parse(await req.json());
-  await requirePermission(userId, corporateOrgId, "CSR.Project.Write");
+  if (input.csrProjectId) {
+    const { rows } = await getPool().query(
+      `SELECT 1 FROM csr_projects WHERE id = $1 AND corporate_org_id = $2 AND deleted_at IS NULL`,
+      [input.csrProjectId, organizationId]
+    );
+    if (rows.length === 0) return apiError(400, "csrProjectId does not belong to this organization");
+  }
 
   const user = await findUserByClerkId(userId);
   const { rows } = await getPool().query(
@@ -56,8 +53,8 @@ export const POST = withApiErrors(async (req: NextRequest, ctx: RouteContext) =>
      VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING id, entry_type, title, description, severity, status, created_at`,
     [
-      corporateOrgId,
-      id,
+      organizationId,
+      input.csrProjectId ?? null,
       input.entryType,
       input.title,
       input.description ?? null,

@@ -67,6 +67,193 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /organizations/{id}/alerts:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Continuous controls monitoring feed (requires CSR.Project.Read) —
+        unifies compliance/document/geofence/transfer/CAPA/beneficiary
+        checks plus two statistical anomaly checks into one list. Computed
+        fresh on every request, nothing persisted or scored.
+      responses:
+        "200": { description: OK }
+
+  /organizations/{id}/risks:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List the organization-wide risk register (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Log a risk or issue, optionally linked to a project (requires
+        CSR.Project.Write).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entryType, title]
+              properties:
+                entryType: { type: string, enum: [risk, issue] }
+                title: { type: string }
+                description: { type: string }
+                severity: { type: string, enum: [low, medium, high] }
+                csrProjectId: { type: string, format: uuid }
+      responses:
+        "200": { description: Created }
+
+  /risks/{riskId}:
+    parameters:
+      - { name: riskId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: >
+        Update a risk/issue's status or severity (requires
+        CSR.Project.Write). Works for both project-scoped and
+        organization-wide entries.
+      responses:
+        "200": { description: Updated }
+
+  /organizations/{id}/controls:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List the organization's controls library (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Add a control (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, controlType]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                controlType: { type: string, enum: [preventive, detective, corrective] }
+                frequency: { type: string, enum: [continuous, daily, weekly, monthly, quarterly, annual] }
+                linkedRiskId: { type: string, format: uuid }
+      responses:
+        "200": { description: Created }
+
+  /controls/{controlId}:
+    parameters:
+      - { name: controlId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Update a control's review frequency (requires CSR.Project.Write)
+      responses:
+        "200": { description: Updated }
+
+  /organizations/{id}/audit-engagements:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List audit engagements (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Create an audit engagement (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                scope: { type: string }
+                startDate: { type: string, format: date }
+                endDate: { type: string, format: date }
+      responses:
+        "200": { description: Created }
+
+  /audit-engagements/{engagementId}:
+    parameters:
+      - { name: engagementId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Update an audit engagement's status (requires CSR.Project.Write)
+      responses:
+        "200": { description: Updated }
+
+  /organizations/{id}/capa-items:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List corrective action items (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Create a corrective action, optionally linked to an audit
+        engagement or a risk (requires CSR.Project.Write). A finding and
+        its remediation are captured together here rather than as a
+        separate "finding" entity.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                auditEngagementId: { type: string, format: uuid }
+                projectRiskId: { type: string, format: uuid }
+                dueDate: { type: string, format: date }
+      responses:
+        "200": { description: Created }
+
+  /capa-items/{capaId}:
+    parameters:
+      - { name: capaId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Update a corrective action's status (requires CSR.Project.Write)
+      responses:
+        "200": { description: Updated }
+
+  /organizations/{id}/incidents:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List incidents (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Log an incident (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category, description]
+              properties:
+                category:
+                  type: string
+                  enum: [safety, fraud, data_breach, beneficiary_complaint, reputational, regulatory, other]
+                severity: { type: string, enum: [low, medium, high] }
+                description: { type: string }
+                csrProjectId: { type: string, format: uuid }
+                fiveWhys: { type: array, items: { type: string }, maxItems: 5 }
+      responses:
+        "200": { description: Created }
+
+  /incidents/{incidentId}:
+    parameters:
+      - { name: incidentId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Update an incident's status or Five Whys (requires CSR.Project.Write)
+      responses:
+        "200": { description: Updated }
+
   /csr-projects/{id}/field-visits:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }

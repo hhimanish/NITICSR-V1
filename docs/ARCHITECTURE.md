@@ -859,3 +859,96 @@ browser-native capability set instead of pretending otherwise.
 - **True offline-first mobile experience** — no native app or
   service-worker/local-sync architecture exists; this is a different
   product architecture, not a feature to bolt on.
+
+## ERT 8: Risk, Audit & Assurance — unifying checks that already existed, not inventing new ones
+
+The brief asked for a 15-domain "Enterprise Trust Operating System" —
+an Enterprise Trust Graph, quantified risk scoring (Financial/
+Reputational/Regulatory/Beneficiary Exposure, "AI Confidence"), AI risk
+prediction (project failure probability, NGO governance deterioration),
+a full fraud platform (pHash, device fingerprinting, behavioral
+analytics), and ESG risk quantification (carbon/water exposure). Each
+of these repeats a mistake this codebase has already been burned by and
+corrected: presenting a number with no real data behind it as if it
+were intelligence. None of the calibration data (historical outcomes,
+board/director relationship data, ESG metrics, photos, device
+fingerprints) exists anywhere in the schema, so none of it was built —
+same discipline as ERT 3's NGO trust-score refusal.
+
+What ERT 8 actually is: the realization that several honest checks
+already existed scattered across ERT 2 (compliance obligations), ERT 3
+(NGO document expiry), ERT 5 (unspent-fund transfers), ERT 6
+(change-request approvals), and ERT 7 (geofence violations) — and
+nobody had unified them into one view. That unification, plus a real
+risk register, controls library, and audit/CAPA workflow, is the
+actual capability here.
+
+### Completed this ERT
+
+- **Continuous Controls Monitoring**: `lib/assurance.ts`'s
+  `computeControlAlerts` — a single feed combining NGO document expiry,
+  field-visit geofence violations, overdue compliance obligations,
+  overdue unspent-fund transfers, segregation-of-duty conflicts
+  (the same user requesting and approving a change request), duplicate
+  beneficiary entries, overdue CAPA items, and two honest statistical
+  checks (a disbursement more than 2.5x a project's own average, a
+  plain ratio — not a fraud model). Computed fresh on every request,
+  nothing persisted or scored.
+- **Enterprise risk register**: `project_risks` (ERT 6) extended to be
+  organization-wide — still linkable to a project, no longer required
+  to be.
+- **Controls library**: `controls` — a real catalog (preventive/
+  detective/corrective, frequency, owner), not a fabricated maturity
+  index.
+- **Internal Audit Management**: `audit_engagements` + `capa_items`,
+  scoped to two levels rather than three — a CAPA's title and
+  description carry the finding itself; a separate "finding" entity
+  didn't add real capability at this stage.
+- **Incident log**: `incidents` with a plain `five_whys` text array —
+  the honest version of structured root-cause analysis. Fishbone/
+  fault-tree diagramming tools are a separate, bigger UI commitment,
+  not built here.
+- **AI Copilot extended** with a real assurance summary (open risk
+  count, overdue CAPA count, active alert count) — no risk score, no
+  prediction, just counts of real rows.
+- New `/corporate/assurance` dashboard and public `/risk-assurance`
+  marketing page, same per-page OG/Twitter/canonical metadata pattern
+  as every other solution page.
+
+### Deferred, same policy as every phase above
+
+- **Enterprise Trust Graph** — the Knowledge Graph ask declined every
+  time it's come up since Phase 2: no director/trustee/board-member or
+  relationship data (shared vendors, shared addresses) exists anywhere
+  in the schema.
+- **Quantified risk scoring** (Financial/Reputational/Regulatory/
+  Beneficiary Exposure, "AI Confidence") — no real calibration data;
+  fabricating these numbers would be worse than not having them, same
+  reasoning as ERT 3's trust-score discipline.
+- **AI Risk Prediction** (failure probability, governance deterioration,
+  finding recurrence) — no historical outcome dataset to predict
+  against.
+- **Full Fraud Intelligence Platform** (pHash image similarity, device
+  fingerprinting, behavioral analytics) — no photos or device data
+  captured; only two narrow, honest statistical checks were built
+  instead.
+- **ESG Risk Intelligence** (carbon/water/waste quantification, BRSR/
+  GRI/TCFD mapping) — no ESG metrics data has ever been captured, only
+  SDG tagging.
+- **External Assurance document-sharing portal** — no file storage
+  vendor, unchanged since Phase 6/ERT 7.
+- **Whistleblower Management** — needs a real anonymity/legal
+  safe-harbor commitment, a deliberate product/legal decision, not
+  something to build around silently.
+- **Crisis Management playbooks, automated communications** —
+  workflow-engine territory, same "no concrete backlog to generalize
+  from" reasoning as every rules-engine deferral since Phase 6.
+- **Seven role-aware AI copilots** — one real Copilot exists, extended
+  with real context; forking it into personas without new data per
+  persona repeats the UI-theater problem ERT 3 already declined.
+- **Business Unit / Cost Center risk dimensions** — no internal org
+  hierarchy exists, same blocker as ERT 5.
+- **SSO/MFA/Zero Trust/device attestation/SIEM/ERP integrations,
+  configurable dashboard builder, scheduled reports, enterprise
+  semantic search** — no vendor relationships or infrastructure for
+  any of these exist.

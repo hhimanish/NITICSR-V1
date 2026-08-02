@@ -34,6 +34,7 @@ const solutionsColumns = [
       { href: "/financial-operations", label: "Financial Operations", description: "Budget, utilization, and unspent-fund transfers." },
       { href: "/project-execution", label: "Project Execution", description: "Programs, milestones, risks, and change requests." },
       { href: "/field-intelligence", label: "Field Intelligence", description: "GPS check-ins, asset register, and surveys." },
+      { href: "/risk-assurance", label: "Risk, Audit & Assurance", description: "Continuous controls, risk register, and CAPA." },
       { href: "/ai", label: "AI Capabilities", icon: Sparkles, description: "What's live, in progress, and roadmap." },
       { href: "/security", label: "Security & Trust", icon: ShieldCheck, description: "Auth, RBAC, and data handling." },
     ],

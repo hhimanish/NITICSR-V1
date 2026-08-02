@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { apiError, apiSuccess, withApiErrors } from "@/lib/api-utils";
+import { computeControlAlerts } from "@/lib/assurance";
 import { buildCopilotMessages, CEREBRAS_MODEL, getCerebrasClient } from "@/lib/cerebras";
 import { computeOrgComplianceSummary } from "@/lib/compliance";
 import { getPool } from "@/lib/db";
@@ -109,6 +110,30 @@ export const POST = withApiErrors(async (req: NextRequest) => {
     }));
   }
 
+  // Real, own-org-scoped assurance summary — open risks, overdue CAPAs,
+  // and the count of continuous-controls alerts (see lib/assurance.ts).
+  // No risk score, no prediction — just counts of real rows.
+  let assuranceSummary: { openRisks: number; overdueCapaItems: number; activeAlerts: number } | null = null;
+  if (!isNgo) {
+    const [{ rows: riskRows }, { rows: capaRows }, alerts] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*) AS count FROM project_risks WHERE organization_id = $1 AND status = 'open'`,
+        [input.organizationId]
+      ),
+      pool.query(
+        `SELECT COUNT(*) AS count FROM capa_items
+          WHERE organization_id = $1 AND status != 'done' AND due_date IS NOT NULL AND due_date < CURRENT_DATE`,
+        [input.organizationId]
+      ),
+      computeControlAlerts(input.organizationId),
+    ]);
+    assuranceSummary = {
+      openRisks: Number(riskRows[0].count),
+      overdueCapaItems: Number(capaRows[0].count),
+      activeAlerts: alerts.length,
+    };
+  }
+
   let cerebras;
   try {
     cerebras = getCerebrasClient();
@@ -141,6 +166,7 @@ export const POST = withApiErrors(async (req: NextRequest) => {
         }
       : null,
     ngoPartnerDocumentAlerts,
+    assurance: assuranceSummary,
   };
 
   const completion = await cerebras.chat.completions.create({

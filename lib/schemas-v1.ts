@@ -303,3 +303,77 @@ export const CreateSurveyResponseSchema = z.object({
 });
 
 export type CreateSurveyResponseInput = z.infer<typeof CreateSurveyResponseSchema>;
+
+export const CreateOrgRiskSchema = z.object({
+  entryType: z.enum(["risk", "issue"]),
+  title: z.string().min(2).max(200),
+  description: z.string().max(2000).optional(),
+  severity: z.enum(["low", "medium", "high"]).optional(),
+  csrProjectId: z.string().uuid().optional(),
+});
+
+export type CreateOrgRiskInput = z.infer<typeof CreateOrgRiskSchema>;
+
+export const CreateControlSchema = z.object({
+  name: z.string().min(2).max(200),
+  description: z.string().max(2000).optional(),
+  controlType: z.enum(["preventive", "detective", "corrective"]),
+  frequency: z.enum(["continuous", "daily", "weekly", "monthly", "quarterly", "annual"]).optional(),
+  linkedRiskId: z.string().uuid().optional(),
+});
+
+export type CreateControlInput = z.infer<typeof CreateControlSchema>;
+
+export const UpdateControlSchema = z.object({
+  frequency: z.enum(["continuous", "daily", "weekly", "monthly", "quarterly", "annual"]).optional(),
+});
+
+export type UpdateControlInput = z.infer<typeof UpdateControlSchema>;
+
+export const CreateAuditEngagementSchema = z.object({
+  title: z.string().min(2).max(200),
+  scope: z.string().max(2000).optional(),
+  startDate: z.string().date().optional(),
+  endDate: z.string().date().optional(),
+});
+
+export type CreateAuditEngagementInput = z.infer<typeof CreateAuditEngagementSchema>;
+
+export const UpdateAuditEngagementSchema = z.object({
+  status: z.enum(["planned", "in_progress", "completed"]).optional(),
+});
+
+export type UpdateAuditEngagementInput = z.infer<typeof UpdateAuditEngagementSchema>;
+
+export const CreateCapaItemSchema = z.object({
+  title: z.string().min(2).max(200),
+  description: z.string().max(2000).optional(),
+  auditEngagementId: z.string().uuid().optional(),
+  projectRiskId: z.string().uuid().optional(),
+  dueDate: z.string().date().optional(),
+});
+
+export type CreateCapaItemInput = z.infer<typeof CreateCapaItemSchema>;
+
+export const UpdateCapaItemSchema = z.object({
+  status: z.enum(["open", "in_progress", "done"]).optional(),
+});
+
+export type UpdateCapaItemInput = z.infer<typeof UpdateCapaItemSchema>;
+
+export const CreateIncidentSchema = z.object({
+  category: z.enum(["safety", "fraud", "data_breach", "beneficiary_complaint", "reputational", "regulatory", "other"]),
+  severity: z.enum(["low", "medium", "high"]).optional(),
+  description: z.string().min(2).max(4000),
+  csrProjectId: z.string().uuid().optional(),
+  fiveWhys: z.array(z.string().max(500)).max(5).optional(),
+});
+
+export type CreateIncidentInput = z.infer<typeof CreateIncidentSchema>;
+
+export const UpdateIncidentSchema = z.object({
+  status: z.enum(["open", "investigating", "resolved"]).optional(),
+  fiveWhys: z.array(z.string().max(500)).max(5).optional(),
+});
+
+export type UpdateIncidentInput = z.infer<typeof UpdateIncidentSchema>;

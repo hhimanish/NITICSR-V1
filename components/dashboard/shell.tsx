@@ -14,6 +14,7 @@ import {
   Menu,
   Search,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const iconByHref: Record<string, LucideIcon> = {
   "/corporate/grants": HandCoins,
   "/corporate/financials": Landmark,
   "/corporate/surveys": ClipboardList,
+  "/corporate/assurance": ShieldAlert,
   "/corporate/governance": Gavel,
   "/corporate/compliance": ShieldCheck,
   "/corporate/settings": Settings,

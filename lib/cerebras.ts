@@ -72,6 +72,7 @@ export type CopilotContext = {
     overdueObligations: number;
   } | null;
   ngoPartnerDocumentAlerts?: { ngoName: string; documentType: string; expiresAt: string }[];
+  assurance?: { openRisks: number; overdueCapaItems: number; activeAlerts: number } | null;
 };
 
 /** Grounds every answer in the caller's own org data only — no cross-tenant
@@ -90,11 +91,14 @@ Rules:
 - When asked about compliance, ground your answer in the compliance summary figures given —
   never estimate or invent a score, obligation count, or gap count.
 - When asked about NGO partners, only cite the document-expiry alerts given — never invent or
-  estimate an NGO's trust, risk, financial, or governance standing; that data isn't provided.`;
+  estimate an NGO's trust, risk, financial, or governance standing; that data isn't provided.
+- When asked about risk or assurance, cite only the counts given (open risks, overdue corrective
+  actions, active control alerts) — never invent a risk score, a fraud likelihood, or a prediction.`;
 
   const user = `Organization: ${context.organizationName} (${context.organizationType})
 ${context.ngoProfile ? `NGO profile: ${JSON.stringify(context.ngoProfile)}\n` : ""}
 ${context.compliance ? `Compliance summary: ${JSON.stringify(context.compliance)}\n` : ""}
+${context.assurance ? `Assurance summary: ${JSON.stringify(context.assurance)}\n` : ""}
 ${
   context.ngoPartnerDocumentAlerts && context.ngoPartnerDocumentAlerts.length > 0
     ? `NGO partner documents expiring within 60 days: ${JSON.stringify(context.ngoPartnerDocumentAlerts)}\n`

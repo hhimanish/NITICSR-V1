@@ -64,6 +64,8 @@ lib/
   project-execution.ts Milestone timeline math, dependency-cycle check, portfolio rollup (ERT 6)
   field-intelligence.ts   Survey answer validation, local QR generation (ERT 7) — geofence distance is
                        computed inline via the existing Haversine SQL, not duplicated here
+  assurance.ts         Continuous controls monitoring feed (ERT 8) — unifies checks already
+                       computed elsewhere (ERT 2/3/5/6/7) plus two honest statistical anomaly checks
   cerebras.ts          AI Copilot client + prompt construction
   feature-flags.ts     Org-override-then-global-default flag reads
   notifications.ts, jobs.ts   Postgres-backed queue, no Redis (ADR 0003)
