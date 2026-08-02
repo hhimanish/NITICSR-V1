@@ -605,3 +605,78 @@ Index as specified.
   No enterprise customer has asked for SCIM or GraphQL.
 - **Bespoke mobile experience, offline saved views** — no mobile app
   exists.
+
+## ERT 4: Grant Management OS — the lifecycle extended, not replaced
+
+The brief asked for a 12-stage grant lifecycle (Idea → Proposal → Review
+→ Scoring → Approval → Contract → Escrow → Milestones → Monitoring →
+Completion → Closure → Renewal). Rather than a new "Grant" domain, this
+extends `csr_projects` — which already covers Idea/Proposal (`status`),
+Approval (`CSR.Project.Approve`), Milestones/Monitoring (`milestones`),
+and Completion (`status`) — with the four stages that were genuinely
+missing, each scoped to what's real:
+
+- **Review** — a structured record (`proposal_reviews`), not a
+  reviewer-panel workflow; there's no defined review committee to model
+  a multi-stage workflow against.
+- **Scoring** — `lib/grants.ts`'s `getProposalScore` blends deterministic
+  readiness checks (NGO assigned, milestones/SDGs/location/beneficiaries
+  defined) with the implementing NGO's real trust score from ERT 3's
+  `lib/ngo-intelligence.ts` when one exists. Cost-per-beneficiary is
+  computed and shown but deliberately **not** folded into the score —
+  there's no platform-wide benchmark to judge "reasonable" cost against,
+  so scoring it would mean inventing a threshold.
+- **Contract** — `grant_agreements` stores terms plus a timestamped
+  acknowledgement from the implementing NGO (a genuine cross-tenant
+  action, resolved via the NGO's own organization, not the corporate's).
+  Explicitly an acknowledgement, not an e-signature — no e-sign vendor is
+  integrated, so it is never presented as legally binding. Editing terms
+  after acknowledgement clears it, since the NGO acknowledged specific
+  terms, not whatever they become later.
+- **Escrow → Disbursement ledger** — `disbursements` records amounts
+  released against budget, rejecting any entry that would exceed it.
+  This is explicitly bookkeeping, not fund movement — there's no payment
+  processor or nodal account integrated, so nothing here executes a real
+  transfer. It's also the same data ERT 2's `compliance_obligations`
+  (utilization reporting) actually needs, generated as a byproduct of
+  using the system rather than reconstructed at filing time.
+- **Renewal** — `POST /csr-projects/:id/renew` creates a new draft
+  project carrying forward the NGO partner and category, linked back via
+  `renewed_from_project_id`. Only offered once the original is
+  `completed`, so a renewal is always a decision about a finished grant,
+  never a live one.
+
+All of this surfaces on a new `/corporate/grants` pipeline page (a
+responsive column-per-stage board: `sm:grid-cols-2 lg:grid-cols-4`, so it
+reads as stacked cards on mobile and a Kanban-style board on desktop
+without separate mobile/desktop implementations) and on the project
+detail page (readiness score, reviews, agreement, disbursement ledger
+with a utilization bar, a renew action once completed). The NGO side
+gets an agreement view and acknowledgement action on its existing
+"Corporate-funded projects" page — no new NGO-facing page was needed.
+
+A new public `/grant-management` marketing page documents the capability
+for discovery — and while writing its metadata, found a real, pre-existing
+gap: no marketing page in the whole site sets its own Open Graph/Twitter
+metadata, so every one of them (esg, compliance-automation, ai, security,
+etc.) has inherited the homepage's static OG title/description since
+Phase 3 — the same shallow-metadata-merge class of bug as the Phase 6
+canonical-URL fix, just on a different field. Fixed for the new page;
+flagged as a follow-up task for the rest of the site rather than expanding
+this ERT's diff to touch every marketing page.
+
+### Deferred, same policy as every phase above
+
+- **Escrow with real fund movement** — no payment processor or nodal
+  bank account integrated; the disbursement ledger above is the honest
+  substitute (a record of intent/utilization, not execution).
+- **Legally binding e-signature on the contract** — no e-sign vendor
+  integrated; the agreement acknowledgement above is the honest
+  substitute.
+- **Reviewer-panel / multi-stage review workflow** — no defined review
+  committee exists to design a workflow against (same reasoning as the
+  workflow-engine deferrals in ERT 1/Phase 6).
+- **A configurable "Scoring" rubric builder** — the readiness checks are
+  fixed and deterministic by design; a generalized rubric engine has the
+  same "no concrete backlog to generalize from" problem as every
+  workflow/rules-engine deferral so far.

@@ -149,3 +149,24 @@ export const ReviewNgoDocumentSchema = z.object({
 });
 
 export type ReviewNgoDocumentInput = z.infer<typeof ReviewNgoDocumentSchema>;
+
+export const CreateProposalReviewSchema = z.object({
+  recommendation: z.enum(["recommend", "recommend_with_conditions", "not_recommend"]),
+  notes: z.string().max(4000).optional(),
+});
+
+export type CreateProposalReviewInput = z.infer<typeof CreateProposalReviewSchema>;
+
+export const UpsertGrantAgreementSchema = z.object({
+  terms: z.string().min(1).max(20000),
+});
+
+export type UpsertGrantAgreementInput = z.infer<typeof UpsertGrantAgreementSchema>;
+
+export const CreateDisbursementSchema = z.object({
+  milestoneId: z.string().uuid().optional(),
+  amount: z.number().positive(),
+  note: z.string().max(1000).optional(),
+});
+
+export type CreateDisbursementInput = z.infer<typeof CreateDisbursementSchema>;

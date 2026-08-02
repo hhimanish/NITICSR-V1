@@ -13,6 +13,7 @@ const staticRoutes = [
   "/solutions/auditors",
   "/esg",
   "/compliance-automation",
+  "/grant-management",
   "/ai",
   "/security",
   "/pricing",

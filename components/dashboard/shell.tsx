@@ -6,6 +6,7 @@ import { UserButton } from "@clerk/nextjs";
 import {
   FileCheck2,
   Gavel,
+  HandCoins,
   LayoutDashboard,
   Menu,
   Search,
@@ -24,6 +25,7 @@ import type { DashboardNavItem } from "@/components/dashboard/nav-data";
 const iconByHref: Record<string, LucideIcon> = {
   "/corporate": LayoutDashboard,
   "/corporate/discovery": Search,
+  "/corporate/grants": HandCoins,
   "/corporate/governance": Gavel,
   "/corporate/compliance": ShieldCheck,
   "/corporate/settings": Settings,

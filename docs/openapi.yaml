@@ -67,6 +67,115 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /csr-projects/{id}/reviews:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List structured proposal review notes (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Add a proposal review note (requires CSR.Project.Write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recommendation]
+              properties:
+                recommendation: { type: string, enum: [recommend, recommend_with_conditions, not_recommend] }
+                notes: { type: string }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/score:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Computed proposal readiness score (requires CSR.Project.Read) —
+        blends deterministic readiness checks with the implementing NGO's
+        real trust score when one exists; cost-per-beneficiary is returned
+        as an informational figure only, never scored (no benchmark data
+        exists to judge it against).
+      responses:
+        "200": { description: OK }
+
+  /csr-projects/{id}/agreement:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Get the grant agreement terms and acknowledgement status (requires
+        CSR.Project.Read in the corporate org OR NGO.Profile.Read in the
+        implementing NGO's org — both sides of the partnership can read it).
+      responses:
+        "200": { description: OK }
+    patch:
+      summary: >
+        Create or update the agreement's terms (requires CSR.Project.Write).
+        Editing terms after acknowledgement clears the acknowledgement.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [terms]
+              properties:
+                terms: { type: string }
+      responses:
+        "200": { description: Upserted }
+
+  /csr-projects/{id}/agreement/acknowledge:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: >
+        The implementing NGO acknowledges the agreement's current terms
+        (requires NGO.Profile.Write in the NGO's own organization — a
+        cross-tenant action, not a legal e-signature).
+      responses:
+        "200": { description: Acknowledged }
+
+  /csr-projects/{id}/disbursements:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List disbursement ledger entries + running total/remaining/percent-used (requires CSR.Project.Read)
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Record a disbursement against budget (requires CSR.Project.Write).
+        A bookkeeping ledger entry, not real payment execution — rejected
+        if it would exceed the project's budget.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                milestoneId: { type: string, format: uuid }
+                amount: { type: number }
+                note: { type: string }
+      responses:
+        "200": { description: Created }
+
+  /csr-projects/{id}/renew:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      summary: >
+        Create a new draft project linked to this one via
+        renewed_from_project_id (requires CSR.Project.Write). Only
+        available once the original project's status is 'completed'.
+      responses:
+        "200": { description: Created }
+
   /ngo-profiles/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }

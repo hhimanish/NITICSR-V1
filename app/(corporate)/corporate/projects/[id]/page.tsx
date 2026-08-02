@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Gauge, RefreshCw, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const SDG_NAMES: Record<number, string> = {
@@ -58,12 +59,60 @@ type ComplianceCheck = { key: string; label: string; passed: boolean; severity: 
 type Obligation = { id: string; description: string; due_date: string; status: "pending" | "satisfied" | "waived" };
 type Compliance = { checks: ComplianceCheck[]; obligations: Obligation[]; score: number };
 
+type ReadinessCheck = { key: string; label: string; passed: boolean; severity: "high" | "medium" | "low" };
+type ProposalScore = {
+  score: number;
+  readinessComponent: number;
+  ngoTrustComponent: number | null;
+  costPerBeneficiary: number | null;
+  checks: ReadinessCheck[];
+};
+type Review = { id: string; recommendation: string; notes: string | null; created_at: string; reviewed_by_name: string | null };
+type Agreement = { id: string; terms: string; acknowledged_at: string | null; acknowledged_by_name: string | null } | null;
+type Disbursement = { id: string; amount: string; note: string | null; created_at: string; recorded_by_name: string | null };
+type DisbursementData = {
+  disbursements: Disbursement[];
+  summary: { totalDisbursed: number; budgetAmount: number | null; remaining: number | null; percentUsed: number | null };
+};
+
 export default function CsrProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const [compliance, setCompliance] = useState<Compliance | null>(null);
+  const [proposalScore, setProposalScore] = useState<ProposalScore | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewNotes, setReviewNotes] = useState("");
+  const [reviewRecommendation, setReviewRecommendation] = useState("recommend");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [agreement, setAgreement] = useState<Agreement>(null);
+  const [agreementTerms, setAgreementTerms] = useState("");
+  const [savingAgreement, setSavingAgreement] = useState(false);
+  const [disbursementData, setDisbursementData] = useState<DisbursementData | null>(null);
+  const [disbursementAmount, setDisbursementAmount] = useState("");
+  const [disbursementNote, setDisbursementNote] = useState("");
+  const [addingDisbursement, setAddingDisbursement] = useState(false);
+  const [renewing, setRenewing] = useState(false);
+
+  function loadGrantData() {
+    fetch(`/api/v1/csr-projects/${id}/score`)
+      .then((r) => r.json())
+      .then((body) => setProposalScore(body.data ?? null))
+      .catch(() => setProposalScore(null));
+    fetch(`/api/v1/csr-projects/${id}/reviews`)
+      .then((r) => r.json())
+      .then((body) => setReviews(body.data ?? []));
+    fetch(`/api/v1/csr-projects/${id}/agreement`)
+      .then((r) => r.json())
+      .then((body) => {
+        setAgreement(body.data ?? null);
+        setAgreementTerms(body.data?.terms ?? "");
+      });
+    fetch(`/api/v1/csr-projects/${id}/disbursements`)
+      .then((r) => r.json())
+      .then((body) => setDisbursementData(body.data ?? null));
+  }
 
   function reload() {
     fetch(`/api/v1/csr-projects/${id}`)
@@ -73,9 +122,75 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
       .then((r) => r.json())
       .then((body) => setCompliance(body.data ?? null))
       .catch(() => setCompliance(null));
+    loadGrantData();
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(reload, [id]);
+
+  async function submitReview(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmittingReview(true);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recommendation: reviewRecommendation, notes: reviewNotes || undefined }),
+      });
+      if (res.ok) {
+        setReviewNotes("");
+        loadGrantData();
+      }
+    } finally {
+      setSubmittingReview(false);
+    }
+  }
+
+  async function saveAgreement() {
+    setSavingAgreement(true);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}/agreement`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ terms: agreementTerms }),
+      });
+      if (res.ok) loadGrantData();
+    } finally {
+      setSavingAgreement(false);
+    }
+  }
+
+  async function addDisbursement(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = Number(disbursementAmount);
+    if (!amount || amount <= 0) return;
+    setAddingDisbursement(true);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}/disbursements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, note: disbursementNote || undefined }),
+      });
+      if (res.ok) {
+        setDisbursementAmount("");
+        setDisbursementNote("");
+        loadGrantData();
+      }
+    } finally {
+      setAddingDisbursement(false);
+    }
+  }
+
+  async function renewProject() {
+    setRenewing(true);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}/renew`, { method: "POST" });
+      const body = await res.json();
+      if (res.ok) window.location.href = `/corporate/projects/${body.data.id}`;
+    } finally {
+      setRenewing(false);
+    }
+  }
 
   async function handleStatusChange(status: string) {
     setUpdating(true);
@@ -150,7 +265,7 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
   const selectedSdgIds = new Set((project.sdgs ?? []).map((s) => s.id));
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-4xl">
       <h1 className="font-heading text-2xl font-semibold">{project.title}</h1>
       {project.description && <p className="mt-2 text-sm text-muted-foreground">{project.description}</p>}
 
@@ -177,6 +292,12 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
               ₹{Number(project.budget_amount).toLocaleString("en-IN")}
             </p>
           </div>
+        )}
+        {project.status === "completed" && (
+          <Button size="sm" variant="outline" className="ml-auto gap-1.5" disabled={renewing} onClick={renewProject}>
+            <RefreshCw className="size-3.5" />
+            Renew as new grant
+          </Button>
         )}
       </div>
 
@@ -234,6 +355,164 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
           )}
         </section>
       )}
+
+      {proposalScore && (
+        <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading text-lg font-semibold">Proposal readiness</h2>
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Gauge className="size-4 text-secondary" aria-hidden="true" />
+              {proposalScore.score}%
+            </span>
+          </div>
+          <ul className="mt-3 space-y-1.5">
+            {proposalScore.checks.map((c) => (
+              <li key={c.key} className="flex items-center gap-2 text-sm">
+                <span
+                  className={
+                    c.passed ? "size-1.5 shrink-0 rounded-full bg-secondary" : "size-1.5 shrink-0 rounded-full bg-accent"
+                  }
+                  aria-hidden="true"
+                />
+                {c.label}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {proposalScore.ngoTrustComponent !== null
+              ? `Blends readiness (${proposalScore.readinessComponent}%) with the implementing NGO's trust score (${proposalScore.ngoTrustComponent}%).`
+              : `Readiness only — the implementing NGO doesn't have a trust score yet.`}
+            {proposalScore.costPerBeneficiary !== null &&
+              ` Cost per beneficiary: ₹${proposalScore.costPerBeneficiary.toLocaleString("en-IN")} (informational — judge against your own benchmarks).`}
+          </p>
+        </section>
+      )}
+
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-heading text-lg font-semibold">Reviews</h2>
+          <ul className="mt-3 space-y-2">
+            {reviews.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No review notes yet.</p>
+            ) : (
+              reviews.map((r) => (
+                <li key={r.id} className="rounded-lg border border-border px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium capitalize">{r.recommendation.replace(/_/g, " ")}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString("en-IN")}
+                    </span>
+                  </div>
+                  {r.notes && <p className="mt-1 text-muted-foreground">{r.notes}</p>}
+                </li>
+              ))
+            )}
+          </ul>
+          <form onSubmit={submitReview} className="mt-4 space-y-2">
+            <Select value={reviewRecommendation} onValueChange={(v) => v && setReviewRecommendation(v)}>
+              <SelectTrigger className="w-full" aria-label="Recommendation">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recommend">Recommend</SelectItem>
+                <SelectItem value="recommend_with_conditions">Recommend with conditions</SelectItem>
+                <SelectItem value="not_recommend">Do not recommend</SelectItem>
+              </SelectContent>
+            </Select>
+            <Textarea
+              placeholder="Review notes (optional)"
+              rows={2}
+              value={reviewNotes}
+              onChange={(e) => setReviewNotes(e.target.value)}
+            />
+            <Button type="submit" size="sm" variant="outline" disabled={submittingReview}>
+              Add review
+            </Button>
+          </form>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-heading text-lg font-semibold">Grant agreement</h2>
+          {agreement?.acknowledged_at ? (
+            <p className="mt-1 text-xs text-secondary">
+              Acknowledged by {agreement.acknowledged_by_name ?? "the NGO"} on{" "}
+              {new Date(agreement.acknowledged_at).toLocaleDateString("en-IN")}.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Not yet acknowledged by the implementing NGO. Editing terms clears any prior acknowledgement.
+            </p>
+          )}
+          <Textarea
+            className="mt-3"
+            rows={5}
+            placeholder="Grant agreement terms…"
+            value={agreementTerms}
+            onChange={(e) => setAgreementTerms(e.target.value)}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2"
+            disabled={savingAgreement || !agreementTerms.trim()}
+            onClick={saveAgreement}
+          >
+            Save terms
+          </Button>
+        </section>
+      </div>
+
+      <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-heading text-lg font-semibold">Fund disbursement</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          A utilization ledger — recorded amounts released against budget, not real payment execution.
+        </p>
+        {disbursementData?.summary.budgetAmount !== null && disbursementData?.summary.budgetAmount !== undefined && (
+          <div className="mt-3">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-secondary"
+                style={{ width: `${Math.min(100, disbursementData.summary.percentUsed ?? 0)}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              ₹{disbursementData.summary.totalDisbursed.toLocaleString("en-IN")} disbursed of ₹
+              {disbursementData.summary.budgetAmount.toLocaleString("en-IN")} ({disbursementData.summary.percentUsed}%)
+            </p>
+          </div>
+        )}
+        <ul className="mt-3 space-y-1.5">
+          {(disbursementData?.disbursements ?? []).map((d) => (
+            <li key={d.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+              <span>
+                ₹{Number(d.amount).toLocaleString("en-IN")}
+                {d.note ? ` — ${d.note}` : ""}
+              </span>
+              <span className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString("en-IN")}</span>
+            </li>
+          ))}
+        </ul>
+        <form onSubmit={addDisbursement} className="mt-3 flex flex-wrap gap-2">
+          <Input
+            type="number"
+            min={0}
+            step="0.01"
+            placeholder="Amount"
+            value={disbursementAmount}
+            onChange={(e) => setDisbursementAmount(e.target.value)}
+            className="w-36"
+          />
+          <Input
+            placeholder="Note (optional)"
+            value={disbursementNote}
+            onChange={(e) => setDisbursementNote(e.target.value)}
+            className="w-56"
+          />
+          <Button type="submit" size="sm" variant="outline" disabled={addingDisbursement}>
+            Record disbursement
+          </Button>
+        </form>
+      </section>
 
       <section className="mt-6">
         <h2 className="font-heading text-lg font-semibold">SDG alignment</h2>
