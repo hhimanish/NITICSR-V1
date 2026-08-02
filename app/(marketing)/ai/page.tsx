@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BrainCircuit, MessageSquareText, ScanSearch, ShieldCheck, Sparkles, Waypoints } from "lucide-react";
+import { ArrowRight, BrainCircuit, MessageSquareText, ScanSearch, SearchCode, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/design-system/breadcrumbs";
@@ -8,13 +8,16 @@ import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger-reveal";
 import { FinalCta } from "@/components/sections/final-cta";
 
+const TITLE = "AI Capabilities";
+const DESCRIPTION = "What's actually live today — matchmaking, an honest trust score, a grounded Copilot, real search, and honest forecasts — labeled accurately, not aspirationally.";
+
 export const metadata: Metadata = {
-  title: "AI Capabilities",
-  description: "How NITICSR uses AI for matchmaking today, and what's next.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/ai" },
   openGraph: {
-    title: "AI Capabilities — NITICSR",
-    description: "How NITICSR uses AI for matchmaking today, and what's next.",
+    title: `${TITLE} — NITICSR`,
+    description: DESCRIPTION,
     url: "/ai",
     siteName: "NITICSR",
     locale: "en_IN",
@@ -22,11 +25,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Capabilities — NITICSR",
-    description: "How NITICSR uses AI for matchmaking today, and what's next.",
+    title: `${TITLE} — NITICSR`,
+    description: DESCRIPTION,
   },
 };
 
+// Corrected against actual shipped state — this page previously understated
+// what was live (the Copilot and trust score were both marked as
+// unfinished well after they shipped for real in ERT 1 and ERT 3).
 const capabilities = [
   {
     icon: ScanSearch,
@@ -36,21 +42,27 @@ const capabilities = [
   },
   {
     icon: BrainCircuit,
-    title: "Trust score modeling",
-    status: "In development",
-    description: "Combining verification, financial, governance, and audit signals into a single 0-100 score.",
+    title: "Honest NGO trust score",
+    status: "Live",
+    description: "Blends only the components with real data behind them — verification and project track record. No fabricated financial or governance score.",
   },
   {
     icon: MessageSquareText,
-    title: "Conversational copilot",
-    status: "Illustrative preview",
-    description: "Natural-language answers grounded in your own platform data — see the preview on the homepage.",
+    title: "Grounded AI Copilot",
+    status: "Live",
+    description: "One assistant grounded across governance, compliance, risk & assurance, and sustainability data — for your organization only, never invented.",
   },
   {
-    icon: Waypoints,
-    title: "Semantic search",
-    status: "Roadmap",
-    description: "Finding relevant NGOs, projects, and reports by meaning, not just keyword match.",
+    icon: SearchCode,
+    title: "Enterprise search",
+    status: "Live",
+    description: "Real full-text search across your projects, policies, risks, and incidents — keyword/stem-based, not a semantic claim we can't back yet.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Honest disbursement forecast",
+    status: "Live",
+    description: "A linear projection from a project's real disbursement history — returns nothing rather than guessing with too little data.",
   },
 ];
 
@@ -69,8 +81,9 @@ export default function AiPage() {
               AI where it earns its place, not everywhere
             </h1>
             <p className="mt-5 text-lg text-muted-foreground text-balance">
-              NITICSR uses Cerebras-hosted open-weight models for matchmaking today. Here&apos;s what&apos;s
-              actually live, what&apos;s in development, and what&apos;s roadmap — labeled honestly.
+              NITICSR uses Cerebras-hosted open-weight models for matchmaking and a grounded Copilot,
+              plus deterministic scoring and search built directly on Postgres. Every capability below
+              is labeled by what&apos;s actually shipped — not what&apos;s aspirational.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" render={<Link href="/#matchmaking" />} className="gap-2">

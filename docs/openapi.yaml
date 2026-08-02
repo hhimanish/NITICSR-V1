@@ -67,6 +67,20 @@ components:
         ngo_profile_id: { type: string, format: uuid }
         review_notes: { type: string, nullable: true }
 paths:
+  /organizations/{id}/search:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: >
+        Enterprise search (requires CSR.Project.Read) — Postgres full-text
+        search (tsvector/ts_rank) across the organization's own projects,
+        governance policies, risks/issues, and incidents. Keyword/stem-based
+        ranking, not semantic retrieval over an embedding corpus.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        "200": { description: OK }
+
   /organizations/{id}/sdg-rollup:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }

@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { CopilotPanel } from "@/components/dashboard/copilot-panel";
+import { GlobalSearch } from "@/components/dashboard/global-search";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import type { DashboardNavItem } from "@/components/dashboard/nav-data";
 
@@ -131,6 +132,7 @@ export function DashboardShell({
             <span className="text-sm font-medium text-muted-foreground">{portal} workspace</span>
           </div>
           <div className="flex items-center gap-2">
+            {portal === "Corporate" && <GlobalSearch />}
             <ThemeToggle />
             <CopilotPanel />
             <UserButton />

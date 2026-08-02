@@ -68,7 +68,11 @@ lib/
                        computed elsewhere (ERT 2/3/5/6/7) plus two honest statistical anomaly checks
   esg.ts               SDG rollup, social impact summary, static BRSR principle cross-reference (ERT 9)
                        — no fabricated Sustainability Score or ESG Maturity Index
-  cerebras.ts          AI Copilot client + prompt construction
+  search.ts            Enterprise search (ERT 10) — Postgres tsvector/ts_rank full-text search,
+                       explicitly not RAG/semantic search; snippets are plain text, never HTML
+                       (ts_headline's default markup was a stored-XSS risk, caught before it shipped)
+  cerebras.ts          AI Copilot client + prompt construction — one consolidated assistant, not
+                       forked into per-role personas (see ADR 0005 note above)
   feature-flags.ts     Org-override-then-global-default flag reads
   notifications.ts, jobs.ts   Postgres-backed queue, no Redis (ADR 0003)
 

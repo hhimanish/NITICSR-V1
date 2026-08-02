@@ -76,14 +76,19 @@ export type CopilotContext = {
   sustainability?: { sdgsCovered: number; totalBeneficiaries: number } | null;
 };
 
-/** Grounds every answer in the caller's own org data only — no cross-tenant
- * context is ever included, and the model is told not to answer beyond it. */
+/** ERT 10 consolidates this into one grounded assistant spanning every
+ * domain that's been wired into it since ERT 1 (governance, compliance,
+ * assurance, sustainability) rather than forking into per-role personas —
+ * see docs/ARCHITECTURE.md's ERT 10 section for why. Grounds every answer
+ * in the caller's own org data only — no cross-tenant context is ever
+ * included, and the model is told not to answer beyond it. */
 export function buildCopilotMessages(question: string, context: CopilotContext) {
-  const system = `You are the NITICSR AI Copilot, answering questions for a single organization
-about its own CSR data and governance policies on the platform. You are given that
-organization's own records only.
+  const system = `You are the NITICSR AI Copilot — one assistant grounded across every domain
+wired into this platform for a single organization: CSR projects, governance policies,
+compliance, risk & assurance, and sustainability. You are given that organization's own
+records only.
 
-Rules:
+Grounding rules:
 - Answer ONLY using the provided data. If the data doesn't contain the answer, say so plainly —
   never guess or invent figures, NGO names, project details, or policy contents.
 - Be concise: 2-4 sentences, or a short list for multi-item answers.
@@ -99,26 +104,22 @@ Rules:
   — never invent a Sustainability Score, ESG Maturity Index, carbon/water figure, or any composite
   index; none of that data is captured on this platform.`;
 
-  const user = `Organization: ${context.organizationName} (${context.organizationType})
-${context.ngoProfile ? `NGO profile: ${JSON.stringify(context.ngoProfile)}\n` : ""}
-${context.compliance ? `Compliance summary: ${JSON.stringify(context.compliance)}\n` : ""}
-${context.assurance ? `Assurance summary: ${JSON.stringify(context.assurance)}\n` : ""}
-${context.sustainability ? `Sustainability summary: ${JSON.stringify(context.sustainability)}\n` : ""}
-${
-  context.ngoPartnerDocumentAlerts && context.ngoPartnerDocumentAlerts.length > 0
-    ? `NGO partner documents expiring within 60 days: ${JSON.stringify(context.ngoPartnerDocumentAlerts)}\n`
-    : ""
-}
-Active governance policies (${context.policies?.length ?? 0}):
-${JSON.stringify(context.policies ?? [], null, 2)}
-
-CSR projects (${context.projects.length}):
-${JSON.stringify(context.projects, null, 2)}
-
-Question: ${question}`;
+  const sections = [
+    `Organization: ${context.organizationName} (${context.organizationType})`,
+    context.ngoProfile && `NGO profile: ${JSON.stringify(context.ngoProfile)}`,
+    context.compliance && `Compliance summary: ${JSON.stringify(context.compliance)}`,
+    context.assurance && `Assurance summary: ${JSON.stringify(context.assurance)}`,
+    context.sustainability && `Sustainability summary: ${JSON.stringify(context.sustainability)}`,
+    context.ngoPartnerDocumentAlerts &&
+      context.ngoPartnerDocumentAlerts.length > 0 &&
+      `NGO partner documents expiring within 60 days: ${JSON.stringify(context.ngoPartnerDocumentAlerts)}`,
+    `Active governance policies (${context.policies?.length ?? 0}):\n${JSON.stringify(context.policies ?? [], null, 2)}`,
+    `CSR projects (${context.projects.length}):\n${JSON.stringify(context.projects, null, 2)}`,
+    `Question: ${question}`,
+  ].filter((section): section is string => Boolean(section));
 
   return [
     { role: "system" as const, content: system },
-    { role: "user" as const, content: user },
+    { role: "user" as const, content: sections.join("\n\n") },
   ];
 }
