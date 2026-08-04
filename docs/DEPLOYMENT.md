@@ -48,10 +48,18 @@ CI run doesn't block the Render deploy (they're independent), so check CI
 before trusting a deploy went out clean.
 
 **New migrations**: adding a file to `db/migrations/` does not run it
-automatically on deploy. Run `npm run db:migrate` against the production
-`DATABASE_URL` (external URL + `PGSSLMODE=require`) after the code
+automatically on deploy. `render.yaml` declares a `preDeployCommand: npm
+run db:migrate` for exactly this — but Render's Pre-Deploy Command only
+runs on paid instance plans, and this service is currently on the free
+plan, so the declaration is a no-op until upgraded (confirmed: a direct
+API call to set it on the running free-tier service silently didn't
+persist). Until then, run `npm run db:migrate` against the production
+`DATABASE_URL` (external URL + `PGSSLMODE=require`) by hand after the code
 deploys, or before if the migration is purely additive (new tables/columns
-— safe to run ahead of code that uses them).
+— safe to run ahead of code that uses them). This is exactly what caused
+a real incident: the production database had never had a single migration
+run against it (a freshly created instance), so every page touching the
+DB 500'd until this was done manually — see `docs/RUNBOOK.md`.
 
 ## Rollback
 

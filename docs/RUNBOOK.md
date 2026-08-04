@@ -103,6 +103,21 @@ justified by real traffic or an enterprise SLA commitment yet. This section
 replaces guessing at a DR program that doesn't exist with what Render's
 platform actually provides today.
 
+## New page/route 500s right after a deploy that added a migration
+
+This happened for real: a freshly created production Postgres instance
+had never had a single migration run against it, so every route touching
+the DB failed until `npm run db:migrate` was run by hand against the
+production `DATABASE_URL`. Render does not run migrations automatically —
+`render.yaml` declares a `preDeployCommand` for this, but Render only
+honors Pre-Deploy Command on paid instance plans; on the free plan (this
+service's current plan) it's a no-op with no error surfaced. Check first:
+does `GET /api/health` say `"database":"ok"` but a specific new page
+still 500? That's the signature of this exact issue — the app can reach
+Postgres fine, it's just missing the schema the new code expects. Fix:
+run `npm run db:migrate` against the production `DATABASE_URL` (see
+`docs/DEPLOYMENT.md`).
+
 ## Database migration failed partway
 
 Each migration file runs inside its own transaction (`scripts/migrate.mjs`)

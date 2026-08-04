@@ -3,6 +3,7 @@ services:
     name: niticsr-os
     runtime: node
     buildCommand: npm install --include=dev && npm run build
+    preDeployCommand: npm run db:migrate
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
