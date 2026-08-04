@@ -1188,3 +1188,100 @@ waiting on.
 - **Encryption at the application layer** — TLS (Render) and at-rest
   encryption (managed Postgres) are the hosting provider's job already;
   there's no gap for app code to close.
+
+## ERT 12: Knowledge & Ecosystem Platform — two dormant tables finished, everything else honestly refused
+
+The brief asked for a Knowledge Centre, Academy, Certification, a Partner
+Marketplace (consultants, auditors, developers), an API Marketplace, a CSR
+Jobs board, Events, Awards, Benchmarks, a "National CSR Index," "National
+NGO/Project Directories," an Impact Repository, Open Data, Interactive
+Maps, a Newsroom, a Podcast, and a Community — framed as "the long-term
+moat." Almost none of it is a scoped-down version of something real: a
+Certification implies an accrediting body nobody has established; a
+Marketplace with no vetted, recruited partners is empty listings; a
+"National" Index or Directory computed from this platform's own
+registered-org base would overclaim coverage exactly the way ERT 9
+refused to fabricate a Sustainability Score; a Newsroom or Podcast with no
+real press coverage or recorded episodes is placeholder content
+masquerading as an ecosystem.
+
+The one real thread: `api_keys` and `webhooks` have existed, completely
+unused, since Phase 2 (`db/migrations/007_platform.sql`) — the same
+dormant-schema pattern as `ngo_trust_scores` before ERT 3 and `milestones`
+before ERT 6. `docs/openapi.yaml`'s API description has said "a future
+API-key scheme for server-to-server use" since Phase 2 without anyone
+building it. That's this ERT's real anchor — the honest version of "API
+Marketplace" and "Developer" ecosystem, scoped to what a developer
+platform actually needs first: credentials and event delivery, not a
+listings page for zero real partners.
+
+### Completed this ERT
+
+- **Self-service API keys**: `lib/api-keys.ts` generates a key (shown
+  once, only its SHA-256 hash stored), lists, and revokes it. An org
+  admin manages keys from Settings; `lib/api-auth.ts`'s `resolveCaller`
+  accepts either a Clerk session or a `Bearer` key. Retrofitted onto
+  exactly one endpoint (`GET /organizations/{id}/search`) as a working
+  proof of the pattern rather than touched onto all 67 v1 routes
+  speculatively — the key's organization comes from the key row itself,
+  never a client-supplied param, so it can't reach another tenant's data.
+- **Outbound webhooks**: `lib/webhooks.ts` finishes the `webhooks` table,
+  adding a `secret` column (`020_ecosystem.sql`) since HMAC-signing an
+  outbound delivery needs the actual secret, not the one-way
+  `secret_hash` the Phase 2 schema had. Delivery reuses the existing
+  Postgres job queue (`lib/jobs.ts`) — retries, backoff, and
+  dead-lettering are the same infrastructure `lib/notifications.ts`
+  already relies on, not a new dispatch system. Exactly one event is
+  wired up, `csr_project.approved`, fired from the same PATCH handler
+  that already records the governance decision (ERT 1) and generates
+  compliance obligations (ERT 2) on that transition — an event vocabulary
+  grows from real triggers, not a speculative catalog.
+- **Open Data**: `lib/platform-stats.ts`'s `computePlatformImpactSummary`
+  — verified NGOs, projects, funds disbursed, beneficiaries reached, SDG
+  coverage, all totaled *across every organization with no per-org
+  breakdown*, so nothing here is a tenant-identifying leak and no opt-in
+  gate is needed. A public `/open-data` page (rendered on request, not
+  build-time ISR — see the page's own comment for why) and
+  `GET /api/v1/platform/impact-summary` expose it, explicitly framed as
+  "platform impact," never a "National CSR Index" this registered-org
+  base can't honestly back.
+- **Opt-in verified NGO directory**: `public_directory_opt_in`, a new
+  global feature flag (default off, `020_ecosystem.sql`), lets an NGO
+  list its own verified profile on a public `/directory` page — gated
+  both by the opt-in (since, unlike Open Data, this reveals identity) and
+  by having at least one approved verification request, so opting in
+  alone can't list an unvetted profile. A small, honest directory, not a
+  claimed-comprehensive national one.
+
+### Explicitly declined: placeholders for blocked ecosystem features
+
+Same instruction, same answer as ERT 11: asked to "incorporate [blocked
+features] as a placeholder," and declined for the same reason. A
+Certification badge with no accrediting body, a Marketplace listing with
+no real partner, a "National Index" computed from a small registered-org
+base, or a Newsroom with no real press mentions would each look like real
+ecosystem infrastructure while being none of it — worse than not
+building it on a platform meant to be trusted with due-diligence
+decisions. The honest substitute is the same as every prior ERT: each
+blocked item, named with the specific thing it's waiting on.
+
+### Deferred, same policy as every phase above
+
+- **Academy / Certification** — issuing a certification implies an
+  accrediting body backing it; that's a legal/product decision, not an
+  engineering gap.
+- **Partner Marketplace (consultants, auditors)** — no partner-vetting
+  pipeline or recruited partners exist yet.
+- **CSR Jobs board** — no employer demand signal.
+- **Events, Awards, Benchmarks, "National" CSR Index/Directories claiming
+  completeness** — this platform's registered-org base doesn't come
+  close to national coverage; the opt-in directory and aggregate Open
+  Data above are the honest, correctly-scoped substitutes.
+- **Newsroom, Podcast** — no real press coverage to link or episodes
+  recorded.
+- **Community forum** — needs a moderation policy decided by the product
+  owner, not improvised mid-build.
+- **API-key auth on the remaining 66 v1 routes** — the pattern is proven
+  on one endpoint; extending it further is mechanical, deferred until a
+  real integration partner needs a second endpoint, not spread thin
+  speculatively.

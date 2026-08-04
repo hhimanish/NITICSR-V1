@@ -36,6 +36,8 @@ const solutionsColumns = [
       { href: "/field-intelligence", label: "Field Intelligence", description: "GPS check-ins, asset register, and surveys." },
       { href: "/risk-assurance", label: "Risk, Audit & Assurance", description: "Continuous controls, risk register, and CAPA." },
       { href: "/platform-services", label: "Platform Services", description: "Feature flags, jobs, logging, tenant isolation." },
+      { href: "/open-data", label: "Open Data", description: "Platform-wide totals, computed live." },
+      { href: "/directory", label: "Verified NGO Directory", description: "Opt-in listing of verified NGOs." },
       { href: "/ai", label: "AI Capabilities", icon: Sparkles, description: "What's live, in progress, and roadmap." },
       { href: "/security", label: "Security & Trust", icon: ShieldCheck, description: "Auth, RBAC, and data handling." },
     ],

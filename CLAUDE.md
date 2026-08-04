@@ -81,6 +81,15 @@ lib/
                        development; called once from instrumentation.ts, never per-request
   logger.ts            Structured JSON logging to stdout (ERT 11) — the ingestion point a real
                        APM would read from later, not an APM itself; no vendor is wired up
+  api-keys.ts          Self-service API keys (ERT 12) — finishes the api_keys table dormant
+                       since Phase 2; raw key shown once, only its SHA-256 hash stored
+  webhooks.ts          Outbound webhooks (ERT 12) — finishes the webhooks table; HMAC-signed
+                       delivery via the existing job queue, not a new dispatch system
+  api-auth.ts          resolveCaller() — Clerk session OR Bearer API key, org id always comes
+                       from the key row itself, never a client-supplied param
+  platform-stats.ts    Cross-tenant Open Data aggregate (ERT 12) — totals only, no per-org
+                       breakdown, so no opt-in gate is needed (contrast with the opt-in
+                       public directory, which reveals identity)
 
 db/migrations/         Numbered plain-SQL migrations, one file per logical change, always idempotent
                        (IF NOT EXISTS / ON CONFLICT DO NOTHING) so re-running is always safe

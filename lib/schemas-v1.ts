@@ -68,6 +68,21 @@ export const SetFeatureFlagSchema = z.object({
 
 export type SetFeatureFlagInput = z.infer<typeof SetFeatureFlagSchema>;
 
+export const CreateApiKeySchema = z.object({
+  name: z.string().min(2).max(100),
+});
+
+export type CreateApiKeyInput = z.infer<typeof CreateApiKeySchema>;
+
+export const WEBHOOK_EVENT_TYPES = ["csr_project.approved"] as const;
+
+export const CreateWebhookSchema = z.object({
+  url: z.string().url(),
+  eventTypes: z.array(z.enum(WEBHOOK_EVENT_TYPES)).min(1),
+});
+
+export type CreateWebhookInput = z.infer<typeof CreateWebhookSchema>;
+
 export const SetProjectSdgsSchema = z.object({
   sdgIds: z.array(z.number().int().min(1).max(17)).max(17),
 });

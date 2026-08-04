@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { processJobs } from "@/lib/jobs";
 import { sendNotificationJobHandler } from "@/lib/notifications";
+import { deliverWebhookJobHandler } from "@/lib/webhooks";
 
 function secretsMatch(a: string, b: string) {
   const bufA = Buffer.from(a);
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
 
   const result = await processJobs({
     send_notification: sendNotificationJobHandler,
+    deliver_webhook: deliverWebhookJobHandler,
   });
 
   return NextResponse.json(result);

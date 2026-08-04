@@ -85,6 +85,31 @@ gated by the separate `Platform.FeatureFlag.Manage` permission
 a global write isn't scoped to any single organization by definition; org-
 scoped overrides go through the ordinary `Organization.Write` check.
 
+## Developer credentials — ERT 12
+
+`api_keys` and `webhooks` went from dormant schema to real, callable
+surfaces this ERT. Handling:
+
+- **API keys**: the raw key is generated with `crypto.randomBytes(24)`,
+  shown to the caller exactly once (at creation, in the API response and
+  the settings UI), and never stored — only its SHA-256 hash
+  (`lib/api-keys.ts`'s `hashApiKey`). Every subsequent request compares a
+  hash of the presented key, the same non-reversible pattern Clerk-issued
+  session tokens already imply, applied here explicitly. A revoked key
+  (`revoked_at` set) is checked on every lookup, not just at issuance.
+- **Webhook signing secrets**: unlike API keys, the outbound HMAC
+  signature NITICSR computes on every delivery requires the actual
+  secret, not a hash of it (hashing is one-way) — so `webhooks.secret` is
+  stored in plaintext in the database, a deliberate exception to the
+  hash-everything default elsewhere in this file, documented rather than
+  silently inconsistent. It's shown to the caller once, same as an API
+  key, so they can verify `X-NITICSR-Signature` on their receiving end.
+- **IDOR**: the new `/api/v1/organizations/{id}/search` key-auth path
+  derives `organizationId` from the API key row itself
+  (`lib/api-auth.ts`'s `resolveCaller`), then requires it to match the
+  `{id}` path param — a key can't be used to reach a different
+  organization's data than the one it was issued to.
+
 ## Not done here (see docs/ARCHITECTURE.md roadmap)
 
 Formal OWASP Top 10 penetration testing, load/DoS testing at scale, and

@@ -165,3 +165,40 @@ export async function computeNgoPartnershipStats(ngoProfileId: string): Promise<
     totalFundingReceived,
   };
 }
+
+export type PublicDirectoryEntry = {
+  organizationId: string;
+  ngoProfileId: string;
+  legalName: string;
+  description: string | null;
+  headquartersState: string | null;
+  operatingStates: string[];
+};
+
+/** Public, opt-in NGO directory (ERT 12) — only NGOs that have explicitly
+ * flipped their `public_directory_opt_in` override on (default off, see
+ * db/migrations/020_ecosystem.sql) AND have at least one approved
+ * verification request. Opt-in because this reveals identity, unlike the
+ * aggregate-only Open Data summary; the verification bar keeps the
+ * directory from listing an unvetted profile just because it opted in. */
+export async function listPublicDirectoryNgos(): Promise<PublicDirectoryEntry[]> {
+  const { rows } = await getPool().query(
+    `SELECT DISTINCT np.organization_id, np.id AS ngo_profile_id, np.legal_name,
+            np.description, np.headquarters_state, np.operating_states
+       FROM ngo_profiles np
+       JOIN feature_flags ff ON ff.organization_id = np.organization_id
+                             AND ff.key = 'public_directory_opt_in' AND ff.is_enabled
+       JOIN verification_requests vr ON vr.ngo_profile_id = np.id AND vr.status = 'approved'
+      WHERE np.deleted_at IS NULL
+      ORDER BY np.legal_name`
+  );
+
+  return rows.map((r) => ({
+    organizationId: r.organization_id,
+    ngoProfileId: r.ngo_profile_id,
+    legalName: r.legal_name,
+    description: r.description,
+    headquartersState: r.headquarters_state,
+    operatingStates: r.operating_states,
+  }));
+}

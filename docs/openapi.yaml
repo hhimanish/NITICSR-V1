@@ -93,6 +93,69 @@ paths:
       responses:
         "200": { description: OK }
 
+  /platform/impact-summary:
+    get:
+      summary: >
+        Public, unauthenticated. Platform-wide totals — verified NGOs,
+        projects, funds disbursed, beneficiaries reached, SDG coverage —
+        aggregated across every organization with no per-organization
+        breakdown. Not a national index; scoped honestly to this
+        platform's own activity.
+      responses:
+        "200": { description: OK }
+
+  /organizations/{id}/api-keys:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List API keys for an organization (requires Organization.Write). Never returns the raw key.
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Generate an API key (requires Organization.Write). The raw key is
+        returned exactly once, in this response — only its SHA-256 hash is
+        stored. Use it as a Bearer token against
+        GET /organizations/{id}/search, the current key-auth showcase
+        endpoint.
+      responses:
+        "200": { description: OK }
+
+  /organizations/{id}/api-keys/{keyId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: keyId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Revoke an API key (requires Organization.Write).
+      responses:
+        "200": { description: OK }
+
+  /organizations/{id}/webhooks:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: List webhooks for an organization (requires Organization.Write). Never returns the signing secret.
+      responses:
+        "200": { description: OK }
+    post:
+      summary: >
+        Register a webhook (requires Organization.Write). The signing
+        secret is returned exactly once, in this response, and used to
+        compute the X-NITICSR-Signature header (HMAC-SHA256 of the raw
+        request body) on every delivery. Only `csr_project.approved` is
+        wired up as an event so far.
+      responses:
+        "200": { description: OK }
+
+  /organizations/{id}/webhooks/{webhookId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: webhookId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      summary: Deactivate a webhook (requires Organization.Write).
+      responses:
+        "200": { description: OK }
+
   /feature-flags:
     get:
       summary: >

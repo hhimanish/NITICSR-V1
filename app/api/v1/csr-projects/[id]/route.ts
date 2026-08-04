@@ -8,6 +8,7 @@ import { generateUnspentFundTransferIfNeeded } from "@/lib/financial-operations"
 import { recordDecision } from "@/lib/governance";
 import { can, requirePermission } from "@/lib/rbac";
 import { UpdateCsrProjectSchema } from "@/lib/schemas-v1";
+import { triggerWebhookEvent } from "@/lib/webhooks";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -98,6 +99,10 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
       rationale: input.rationale,
     });
     await generateObligationsForProject(corporateOrgId, id);
+    await triggerWebhookEvent("csr_project.approved", corporateOrgId, {
+      projectId: id,
+      title: rows[0].title,
+    });
   }
 
   if (input.status === "completed") {
