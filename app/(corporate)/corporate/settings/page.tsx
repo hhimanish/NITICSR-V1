@@ -1,6 +1,7 @@
 "use client";
 
 import { useOrg } from "@/components/dashboard/org-context";
+import { FeatureFlagsPanel } from "@/components/dashboard/feature-flags-panel";
 
 export default function CorporateSettingsPage() {
   const org = useOrg();
@@ -24,6 +25,17 @@ export default function CorporateSettingsPage() {
           <p className="mt-1 text-sm capitalize">{org.type}</p>
         </div>
       </div>
+
+      <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+        <h2 className="font-heading text-lg font-semibold">Platform features</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Opt your organization in or out of platform capabilities individually.
+        </p>
+        <div className="mt-4">
+          <FeatureFlagsPanel />
+        </div>
+      </div>
+
       <p className="mt-4 text-xs text-muted-foreground">
         Team member management and notification preferences are on the roadmap — see
         docs/ARCHITECTURE.md.

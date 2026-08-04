@@ -28,6 +28,7 @@ export const PERMISSIONS = [
   "Governance.Delegation.Manage",
   "Compliance.Obligation.Read",
   "Compliance.Obligation.Write",
+  "Platform.FeatureFlag.Manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

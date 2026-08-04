@@ -1089,3 +1089,102 @@ with zero new infrastructure (Postgres's native `tsvector`/`ts_rank`).
 - **Agentic AI** — no defined multi-agent orchestration use case.
 - **Enterprise RAG, Knowledge Graph** — no ingested corpus or
   relationship data, the recurring blocker since Phase 2.
+
+## ERT 11: Enterprise Platform Services — the shared layer, named honestly
+
+The brief asked for Configuration, Feature Flags, Search, Observability,
+Logging, Metrics, Tracing, API Gateway, Queue, Notifications,
+Localization, Theming, Tenant Isolation, Secrets, Encryption, Backup,
+Disaster Recovery, and Business Continuity — framed as a new "Shared
+Services Layer." Auditing what already existed found that roughly half of
+this list was already real, just never named as a layer: `lib/feature-
+flags.ts` (Phase 6), `lib/search.ts` (ERT 10), `lib/jobs.ts`'s Postgres
+queue (Phase 2), `lib/notifications.ts` (Phase 2), the dark mode toggle
+(ERT 1), `lib/rate-limit.ts` (Phase 5), and tenant isolation itself —
+already enforced on every route via `requirePermission`, just never
+formally audited as one. ERT 11 finished the genuinely missing, real
+pieces and explicitly refused to build fake ones for the rest — see the
+"go ahead" instruction's request to add "placeholders" for blocked items,
+declined below for the same reason ADR 0005 has held since Phase 2.
+
+### Completed this ERT
+
+- **Feature-flag admin surface**: `feature_flags` (global defaults) has
+  existed since Phase 2 with only a migration-seed write path.
+  `lib/feature-flags.ts` gained `listFeatureFlags` and
+  `setOrganizationFlagOverride`/`setGlobalFlagDefault`;
+  `PATCH /api/v1/feature-flags` lets a corporate/NGO admin toggle their
+  own organization's override (`Organization.Write`, already held) and a
+  new `Platform.FeatureFlag.Manage` permission (granted to `platform_admin`
+  only, `db/migrations/019_platform_services.sql`) gates changing what
+  every tenant without an override inherits. A panel in both Corporate
+  and NGO Settings surfaces this — no separate platform-admin console
+  exists yet, so global-default editing stays API-only, a named, honest
+  limitation rather than a half-built admin app.
+- **Boot-time configuration validation**: `lib/config.ts` validates
+  `DATABASE_URL`/Clerk credentials via Zod at server start
+  (`instrumentation.ts`, Next's native boot hook — runs once per server
+  instance, not during `next build`, so CI is unaffected). Hard-fails in
+  production (refusing to serve traffic on a broken deploy, per
+  `docs/RUNBOOK.md`); only warns in development, since a contributor
+  running `next dev` with a partial `.env` is normal and shouldn't be
+  blocked from starting the app — a real bug caught and fixed during this
+  ERT's own verification pass, when the hard-fail version broke local dev
+  entirely.
+- **Structured logging foundation**: `lib/logger.ts` emits structured
+  JSON to stdout (Render captures it natively), replacing bare
+  `console.error` calls in `lib/api-utils.ts`'s `withApiErrors`. This is
+  deliberately the ingestion point a real APM would read from later, not
+  an APM itself — no dashboards, alerting, or trace correlation exist.
+- **Tenant isolation, audited not rebuilt**: all 67 `app/api/v1/**/route.ts`
+  files were reviewed to confirm every organization-scoped query derives
+  its `organization_id` from the resource itself or a
+  `requirePermission`/`hasAnyPermission` check the caller can't forge —
+  findings in `docs/SECURITY.md`'s new "Tenant Isolation Audit" section,
+  including the two intentionally cross-tenant surfaces (NGO directory
+  reads, document/verification review) and why they're not a gap.
+- **API versioning policy, documented ahead of the first deprecation**:
+  `docs/openapi.yaml` now states the convention (`Deprecation`/`Sunset`
+  headers, additive-first changes) for when v1 endpoints eventually need
+  to change — written down before it's needed, not improvised under
+  pressure later.
+- **Backup & DR, what Render actually provides**: `docs/RUNBOOK.md` now
+  documents the real mechanism (Render managed Postgres automated
+  backups on paid tiers, none on free tier) and an honest RPO/RTO
+  statement instead of a fabricated DR program.
+- **Public `/platform-services` page**: lists the above as "Live," and
+  every blocked item as "Planned — blocked on: [specific reason]" —
+  visible on the roadmap, never presented as working.
+
+### Explicitly declined: placeholders for blocked capabilities
+
+The build instruction for this ERT asked to "incorporate [blocked
+features] as a placeholder." This was declined: a placeholder UI or config
+stub for Observability/APM, Redis, an API Gateway, a secrets manager, or
+i18n would be exactly the fabricated-capability pattern ADR 0005 has held
+the line against for ten straight ERTs — a control that looks like it
+works but has no real vendor or infrastructure behind it is worse than not
+having it, on a platform enterprises are meant to trust. The honest
+substitute is what shipped instead: each blocked item is documented, on
+the public roadmap page and in this file, with the specific decision it's
+waiting on.
+
+### Deferred, same policy as every phase above
+
+- **Observability / APM** (metrics, tracing, dashboards, alerting) — no
+  monitoring vendor (Datadog, Grafana Cloud, New Relic, Honeycomb) has
+  been chosen; `lib/logger.ts` is the real foundation one would ingest
+  from, not a substitute for one.
+- **Redis-backed caching/rate limiting** — ADR 0003 stands; nothing has
+  hit a ceiling that justifies it.
+- **API Gateway** — one Next.js app serves everything; a gateway in front
+  of itself adds a hop with nothing to route.
+- **Dedicated secrets manager** (Vault etc.) — Render environment
+  variables are the real secret store at current scale.
+- **Internationalization / localization** — no second-language customer
+  requirement has been stated.
+- **CDN vendor selection** — Render + Next.js's own asset serving covers
+  current traffic; no vendor decision has been made or needed.
+- **Encryption at the application layer** — TLS (Render) and at-rest
+  encryption (managed Postgres) are the hosting provider's job already;
+  there's no gap for app code to close.

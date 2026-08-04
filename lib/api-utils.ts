@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { logger } from "@/lib/logger";
 import { ForbiddenError } from "@/lib/rbac";
 
 export function paginationParams(searchParams: URLSearchParams) {
@@ -34,7 +35,11 @@ export function withApiErrors<Ctx = unknown>(
       if (error instanceof ForbiddenError) {
         return apiError(403, error.message);
       }
-      console.error("Unhandled API error", error);
+      logger.error("Unhandled API error", {
+        path: req.nextUrl.pathname,
+        method: req.method,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return apiError(500, "Internal server error");
     }
   };

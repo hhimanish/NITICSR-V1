@@ -18,6 +18,7 @@ const staticRoutes = [
   "/project-execution",
   "/field-intelligence",
   "/risk-assurance",
+  "/platform-services",
   "/ai",
   "/security",
   "/pricing",

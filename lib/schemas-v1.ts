@@ -59,6 +59,15 @@ export const UpdateCsrProjectSchema = z.object({
 
 export type UpdateCsrProjectInput = z.infer<typeof UpdateCsrProjectSchema>;
 
+export const SetFeatureFlagSchema = z.object({
+  key: z.string().min(1).max(100),
+  isEnabled: z.boolean(),
+  organizationId: z.string().uuid().nullable().optional(),
+  description: z.string().max(500).optional(),
+});
+
+export type SetFeatureFlagInput = z.infer<typeof SetFeatureFlagSchema>;
+
 export const SetProjectSdgsSchema = z.object({
   sdgIds: z.array(z.number().int().min(1).max(17)).max(17),
 });

@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TrustScoreWidget } from "@/components/design-system/trust-score-widget";
 import { VerificationBadge, type VerificationStatus } from "@/components/design-system/verification-badge";
 import { useOrg } from "@/components/dashboard/org-context";
+import { FeatureFlagsPanel } from "@/components/dashboard/feature-flags-panel";
 import { CSR_CATEGORIES } from "@/lib/csr-categories";
 
 const DOCUMENT_TYPES = ["12A", "80G", "FCRA", "CSR1", "PAN", "REGISTRATION_CERTIFICATE", "OTHER"] as const;
@@ -339,6 +340,16 @@ export default function NgoSettingsPage() {
           </div>
         </>
       )}
+
+      <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+        <h2 className="font-heading text-lg font-semibold">Platform features</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Opt your organization in or out of platform capabilities individually.
+        </p>
+        <div className="mt-4">
+          <FeatureFlagsPanel />
+        </div>
+      </div>
     </div>
   );
 }

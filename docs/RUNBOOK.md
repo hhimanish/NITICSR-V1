@@ -14,7 +14,13 @@ generic template. See `docs/DEPLOYMENT.md` for setup and
 1. Check Render's deploy log for the web service — a failed build often
    means a missing/misconfigured env var (see the `NODE_ENV` pitfall in
    `docs/DEPLOYMENT.md`) or a migration that hasn't been run yet against a
-   fresh schema.
+   fresh schema. In production, the server now refuses to start at all if
+   `DATABASE_URL`, `CLERK_SECRET_KEY`, or
+   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is missing (`lib/config.ts`,
+   `instrumentation.ts`) — look for `"Missing required environment
+   variables"` in the deploy log as the exact cause rather than guessing
+   from a generic crash. This check is a warning, not a hard failure, in
+   local development.
 2. Check Render Postgres is reachable — if `DATABASE_URL` is wrong or the
    instance was deleted (free tier: auto-deleted after 90 days), every
    page that touches the DB (which is most of them, via layout-level auth
@@ -69,6 +75,33 @@ generic template. See `docs/DEPLOYMENT.md` for setup and
    ON o.id = om.organization_id JOIN roles r ON r.id = om.role_id WHERE
    om.user_id = '<user id>';` to confirm the acting org is really type
    `auditor`, not `corporate`/`ngo`.
+
+## Backup & disaster recovery — what's real
+
+Render's managed Postgres (not a custom backup system) is the actual backup
+mechanism: paid Render Postgres plans take automated daily backups with a
+retention window set by the plan tier, restorable to a new instance from the
+Render dashboard. The **free tier has no automated backups and is deleted
+after 90 days of inactivity** — do not run this app's production database on
+the free tier; it isn't a backup gap this codebase can close in application
+code. Before relying on this in an incident, confirm the actual plan and
+retention window in the Render dashboard, since those are account-level
+settings this repo doesn't control or track.
+
+Given a single Render region and a single Postgres instance, real recovery
+looks like: restore the most recent Render backup to a new instance, point
+`DATABASE_URL` at it, redeploy. That has a recovery point objective bounded
+by the backup interval (typically up to 24h of data loss) and a recovery
+time objective bounded by how long a Render restore + redeploy takes in
+practice — neither has been measured with a real drill.
+
+**Deferred, honestly**: a tested recovery drill (restore a backup and verify
+data integrity end-to-end), multi-region failover, and a formal RPO/RTO
+commitment to customers — each needs either a scheduled maintenance window
+to test destructively, or a second Render region, neither of which has been
+justified by real traffic or an enterprise SLA commitment yet. This section
+replaces guessing at a DR program that doesn't exist with what Render's
+platform actually provides today.
 
 ## Database migration failed partway
 

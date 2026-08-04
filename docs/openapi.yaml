@@ -8,6 +8,18 @@ info:
     server-to-server use — see docs/ARCHITECTURE.md roadmap). Every
     write is checked against the caller's permission-based role for the
     organization being acted on.
+
+
+    Versioning policy (ERT 11): the `/api/v1` prefix is the only version
+    that exists today — there is no v2, so there is nothing to deprecate
+    yet. When a breaking change to a v1 endpoint is unavoidable, the
+    convention is: add the new shape as a new endpoint or an additive field
+    rather than breaking the existing response first; if an endpoint must
+    be retired, it gets a `Deprecation: true` and `Sunset: <date>` response
+    header for at least one release cycle before removal, and a note is
+    added to this file's `description` for that path. No endpoint has been
+    deprecated under this policy yet — it's documented now, ahead of the
+    first real deprecation, rather than improvised later.
 servers:
   - url: /api/v1
 security:
@@ -78,6 +90,28 @@ paths:
         ranking, not semantic retrieval over an embedding corpus.
       parameters:
         - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        "200": { description: OK }
+
+  /feature-flags:
+    get:
+      summary: >
+        List feature flags (requires Organization.Read on organizationId) —
+        every global default plus the caller's own organization's override,
+        with the effective value already resolved. Pass `key` to check a
+        single flag instead of listing all.
+      parameters:
+        - { name: organizationId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: key, in: query, required: false, schema: { type: string } }
+      responses:
+        "200": { description: OK }
+    patch:
+      summary: >
+        Set a flag's value. Org-scoped (organizationId in the body) requires
+        Organization.Write on that org. Global (organizationId omitted)
+        requires Platform.FeatureFlag.Manage, checked across any
+        organization the caller belongs to, since it changes what every
+        tenant without its own override inherits.
       responses:
         "200": { description: OK }
 

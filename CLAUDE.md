@@ -73,11 +73,20 @@ lib/
                        (ts_headline's default markup was a stored-XSS risk, caught before it shipped)
   cerebras.ts          AI Copilot client + prompt construction — one consolidated assistant, not
                        forked into per-role personas (see ADR 0005 note above)
-  feature-flags.ts     Org-override-then-global-default flag reads
+  feature-flags.ts     Org-override-then-global-default flag reads + writes (ERT 11 added the
+                       admin write path — org overrides via Organization.Write, global defaults
+                       via the new Platform.FeatureFlag.Manage permission)
   notifications.ts, jobs.ts   Postgres-backed queue, no Redis (ADR 0003)
+  config.ts            Boot-time env validation (ERT 11) — hard-fails in production, warns in
+                       development; called once from instrumentation.ts, never per-request
+  logger.ts            Structured JSON logging to stdout (ERT 11) — the ingestion point a real
+                       APM would read from later, not an APM itself; no vendor is wired up
 
 db/migrations/         Numbered plain-SQL migrations, one file per logical change, always idempotent
                        (IF NOT EXISTS / ON CONFLICT DO NOTHING) so re-running is always safe
+
+instrumentation.ts      Next.js server-boot hook (ERT 11) — runs once per server instance, not
+                       during `next build`; calls lib/config.ts's validateEnv()
 
 docs/
   ARCHITECTURE.md      Domain map + a section per phase: built vs. deferred vs. why

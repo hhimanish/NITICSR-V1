@@ -42,6 +42,49 @@ honestly claim to have done.
   unexpected errors to a generic 500 and logs the real error server-side —
   no stack traces or DB error text reach the client.
 
+## Tenant Isolation Audit — ERT 11
+
+A follow-up pass specifically confirming what "Tenant Isolation" means in a
+single-schema, multi-tenant app like this one: every query that touches
+another organization's data must be scoped by `organization_id`, and that
+scope must come from somewhere the caller can't forge. All 67 route files
+under `app/api/v1/**` were checked for this.
+
+**Pattern found, consistently applied**: every write or resource-scoped
+read either (a) derives the owning `organization_id` from the resource row
+itself — e.g. `csr-projects/[id]/milestones` looks up the project's
+`corporate_org_id` before calling `requirePermission`, rather than trusting
+a client-supplied org id — or (b) takes `organizationId` as an explicit path
+or query param and passes it straight into `requirePermission`/`can()`,
+which independently re-derives whether the caller is actually a member of
+*that* organization with the required permission from `organization_members`
+— so a client can't widen its own access by passing a different org id; the
+DB join simply returns no rows.
+
+**Two deliberately cross-tenant surfaces, working as designed**:
+- NGO directory reads (`ngo-profiles`, `ngo-profiles/[id]`) use
+  `hasAnyPermission` — access if the caller holds `NGO.Profile.Read`
+  *anywhere*, not scoped to one org, because browsing NGOs across the
+  platform is the point (ERT 3). Responses are aggregate-only for
+  partnership stats (`computeNgoPartnershipStats`), never another
+  corporate's specific project details.
+- Document/verification review (`ngo-documents/[id]`,
+  `verification-requests/[id]`) checks the *reviewer's* organization (the
+  auditor/platform_admin's own org, passed as `input.organizationId`) holds
+  `NGO.Verify`/`Verification.Review` — not the document's own org — because
+  reviewing another organization's submission is inherently cross-tenant.
+  This isn't a gap: the resource being modified (a document's status) isn't
+  itself organization-scoped data being leaked, and the reviewer's
+  permission check is real and independently verified against their actual
+  membership.
+
+No IDOR was found in this pass beyond what the Phase 5 review already
+covered. `feature_flags` global (platform-wide) writes — new this ERT — are
+gated by the separate `Platform.FeatureFlag.Manage` permission
+(`app/api/v1/feature-flags/route.ts`), checked via `hasAnyPermission` since
+a global write isn't scoped to any single organization by definition; org-
+scoped overrides go through the ordinary `Organization.Write` check.
+
 ## Not done here (see docs/ARCHITECTURE.md roadmap)
 
 Formal OWASP Top 10 penetration testing, load/DoS testing at scale, and
