@@ -24,8 +24,11 @@ function primaryEmail(data: ClerkUserEvent["data"]) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log("[clerk-webhook] received request");
+
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
+    console.error("[clerk-webhook] CLERK_WEBHOOK_SECRET is not set");
     return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
   }
 
@@ -34,6 +37,7 @@ export async function POST(req: NextRequest) {
   const svixSignature = req.headers.get("svix-signature");
 
   if (!svixId || !svixTimestamp || !svixSignature) {
+    console.error("[clerk-webhook] missing svix headers");
     return NextResponse.json({ error: "Missing svix headers" }, { status: 400 });
   }
 
@@ -47,9 +51,12 @@ export async function POST(req: NextRequest) {
       "svix-timestamp": svixTimestamp,
       "svix-signature": svixSignature,
     }) as ClerkUserEvent;
-  } catch {
+  } catch (error) {
+    console.error("[clerk-webhook] signature verification failed", error);
     return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 });
   }
+
+  console.log("[clerk-webhook] verified event", event.type);
 
   try {
     switch (event.type) {

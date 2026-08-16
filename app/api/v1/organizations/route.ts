@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { apiError, apiSuccess, paginationParams, withApiErrors } from "@/lib/api-utils";
 import { getPool } from "@/lib/db";
 import { CreateOrganizationSchema } from "@/lib/schemas-v1";
-import { findUserByClerkId } from "@/lib/users-repo";
+import { getOrCreateUserFromClerk } from "@/lib/users-repo";
 
 const DEFAULT_ROLE_BY_TYPE: Record<string, string> = {
   corporate: "corporate_admin",
@@ -37,12 +37,9 @@ export const POST = withApiErrors(async (req: NextRequest) => {
   const { userId } = await auth();
   if (!userId) return apiError(401, "Not authenticated");
 
-  const user = await findUserByClerkId(userId);
+  const user = await getOrCreateUserFromClerk(userId);
   if (!user) {
-    return apiError(
-      409,
-      "User record not yet synced from Clerk — try again in a few seconds, or check the Clerk webhook is configured."
-    );
+    return apiError(409, "We couldn't verify your account email with Clerk — please try again in a moment.");
   }
 
   const input = CreateOrganizationSchema.parse(await req.json());
