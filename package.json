@@ -12,6 +12,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:seed-dev": "node scripts/seed-dev-data.mjs",
     "test": "vitest run"
   },
   "dependencies": {
