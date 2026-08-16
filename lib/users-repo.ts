@@ -1,3 +1,5 @@
+import { clerkClient } from "@clerk/nextjs/server";
+
 import { getPool } from "@/lib/db";
 
 export type ClerkUserSync = {
@@ -32,4 +34,31 @@ export async function findUserByClerkId(clerkUserId: string) {
     [clerkUserId]
   );
   return rows[0] ?? null;
+}
+
+// Self-heals the case where user.created hasn't landed yet (webhook lag, or
+// signup racing straight into org creation) by pulling the user directly
+// from Clerk instead of failing the request. The webhook stays the primary
+// sync path; this is the fallback for the request that gets there first.
+export async function getOrCreateUserFromClerk(clerkUserId: string) {
+  const existing = await findUserByClerkId(clerkUserId);
+  if (existing) return existing;
+
+  const client = await clerkClient();
+  const clerkUser = await client.users.getUser(clerkUserId);
+
+  const email =
+    clerkUser.emailAddresses.find((a) => a.id === clerkUser.primaryEmailAddressId)?.emailAddress ??
+    clerkUser.emailAddresses[0]?.emailAddress ??
+    null;
+  if (!email) return null;
+
+  await upsertUserFromClerk({
+    clerkUserId,
+    email,
+    fullName: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || null,
+    avatarUrl: clerkUser.imageUrl ?? null,
+  });
+
+  return findUserByClerkId(clerkUserId);
 }
