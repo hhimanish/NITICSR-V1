@@ -40,8 +40,8 @@ export default function CareersPage() {
         <FadeIn>
           <h1 className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">Careers at NITICSR</h1>
           <p className="mt-5 text-lg text-muted-foreground">
-            We&apos;re early — building the team that will take NITICSR from Phase 3 to a platform
-            enterprises depend on for CSR compliance.
+            We&apos;re early — building the team that will take NITICSR from its current build
+            to a platform enterprises depend on for CSR compliance.
           </p>
         </FadeIn>
 

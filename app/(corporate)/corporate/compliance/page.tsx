@@ -21,7 +21,7 @@ type ComplianceDetail = { checks: ComplianceCheck[]; obligations: Obligation[]; 
 
 type Summary = {
   totalProjects: number;
-  averageScore: number;
+  averageScore: number | null;
   projectsWithGaps: number;
   overdueObligations: number;
 };
@@ -118,7 +118,12 @@ export default function CorporateCompliancePage() {
 
       {summary && (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <KpiTile icon={ShieldCheck} label="Compliance score" value={`${summary.averageScore}%`} />
+          <KpiTile
+            icon={ShieldCheck}
+            label="Compliance score"
+            value={summary.averageScore === null ? "—" : `${summary.averageScore}%`}
+            hint={summary.averageScore === null ? "No approved projects yet" : undefined}
+          />
           <KpiTile
             icon={AlertTriangle}
             label="Projects with gaps"

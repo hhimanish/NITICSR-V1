@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { VerificationBadge } from "@/components/design-system/verification-badge";
 import { CSR_CATEGORIES, INDIAN_STATES_FOR_FILTERS } from "@/lib/csr-categories";
 
 type NgoResult = {
@@ -103,7 +104,12 @@ export default function CorporateDiscoveryPage() {
                 href={`/corporate/discovery/${ngo.id}`}
                 className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
               >
-                <h3 className="font-heading text-base font-semibold">{ngo.legal_name}</h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-heading text-base font-semibold">{ngo.legal_name}</h3>
+                  {/* Every result here has passed verification review — the API only
+                      returns NGOs with an approved verification request (NITICSR-NGO-004) */}
+                  <VerificationBadge label="Verified" status="verified" className="shrink-0" />
+                </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {ngo.headquarters_state ?? "State not set"} · Operates in{" "}
                   {ngo.operating_states.length || "0"} state(s)

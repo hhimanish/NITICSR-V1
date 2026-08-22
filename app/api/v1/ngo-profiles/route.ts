@@ -33,7 +33,15 @@ export const GET = withApiErrors(async (req: NextRequest) => {
     return apiError(400, "lat, lng, and radiusKm must be valid numbers, with radiusKm > 0");
   }
 
-  const conditions = ["np.deleted_at IS NULL"];
+  // Found during manual QA (NITICSR-NGO-004): this directory returned every
+  // profile regardless of verification status, contradicting the platform's
+  // own "Trust by Design — every partner is verified before it's ever
+  // recommended" claim and the empty-state copy below ("No verified NGO
+  // profiles match yet"), which already assumed this filter existed.
+  const conditions = [
+    "np.deleted_at IS NULL",
+    "EXISTS (SELECT 1 FROM verification_requests vr WHERE vr.ngo_profile_id = np.id AND vr.status = 'approved')",
+  ];
   const params: unknown[] = [];
 
   if (state) {

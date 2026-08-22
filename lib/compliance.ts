@@ -156,7 +156,11 @@ export function getComplianceScore(
 
 export type OrgComplianceSummary = {
   totalProjects: number;
-  averageScore: number;
+  /** null with zero non-draft projects — there's nothing to be compliant
+   * about yet. Found during manual QA (NITICSR-LOG-011): this used to
+   * default to 100, which reads as "we are fully compliant" rather than the
+   * honest "there is nothing to measure yet." */
+  averageScore: number | null;
   projectsWithGaps: number;
   overdueObligations: number;
   obligationCounts: { pending: number; satisfied: number; waived: number };
@@ -212,7 +216,7 @@ export async function computeOrgComplianceSummary(organizationId: string): Promi
   const today = new Date().toISOString().slice(0, 10);
   return {
     totalProjects: projects.length,
-    averageScore: projects.length === 0 ? 100 : Math.round(scoreSum / projects.length),
+    averageScore: projects.length === 0 ? null : Math.round(scoreSum / projects.length),
     projectsWithGaps,
     overdueObligations: obligations.filter((o) => o.status === "pending" && o.due_date < today).length,
     obligationCounts: {

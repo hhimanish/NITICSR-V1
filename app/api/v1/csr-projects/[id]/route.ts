@@ -6,6 +6,7 @@ import { generateObligationsForProject } from "@/lib/compliance";
 import { getPool } from "@/lib/db";
 import { generateUnspentFundTransferIfNeeded } from "@/lib/financial-operations";
 import { recordDecision } from "@/lib/governance";
+import { isValidStatusTransition, type CsrProjectStatus } from "@/lib/project-lifecycle";
 import { can, requirePermission } from "@/lib/rbac";
 import { UpdateCsrProjectSchema } from "@/lib/schemas-v1";
 import { triggerWebhookEvent } from "@/lib/webhooks";
@@ -17,6 +18,14 @@ async function loadProjectOrgId(projectId: string) {
     projectId,
   ]);
   return rows[0]?.corporate_org_id ?? null;
+}
+
+async function loadProjectForUpdate(projectId: string) {
+  const { rows } = await getPool().query(
+    `SELECT corporate_org_id, status, ngo_profile_id FROM csr_projects WHERE id = $1 AND deleted_at IS NULL`,
+    [projectId]
+  );
+  return rows[0] ?? null;
 }
 
 export const GET = withApiErrors(async (req: NextRequest, ctx: RouteContext) => {
@@ -32,6 +41,7 @@ export const GET = withApiErrors(async (req: NextRequest, ctx: RouteContext) => 
   const { rows } = await getPool().query(
     `SELECT p.*,
             c.key AS csr_category_key,
+            np.legal_name AS ngo_legal_name,
             (SELECT json_agg(pl) FROM project_locations pl WHERE pl.csr_project_id = p.id) AS locations,
             (SELECT json_agg(m) FROM milestones m WHERE m.csr_project_id = p.id) AS milestones,
             (SELECT json_agg(b) FROM beneficiaries b WHERE b.csr_project_id = p.id) AS beneficiaries,
@@ -40,6 +50,7 @@ export const GET = withApiErrors(async (req: NextRequest, ctx: RouteContext) => 
               WHERE ps.csr_project_id = p.id) AS sdgs
        FROM csr_projects p
        JOIN csr_categories c ON c.id = p.csr_category_id
+       LEFT JOIN ngo_profiles np ON np.id = p.ngo_profile_id
       WHERE p.id = $1 AND p.deleted_at IS NULL`,
     [id]
   );
@@ -53,14 +64,28 @@ export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext) =
   if (!userId) return apiError(401, "Not authenticated");
 
   const { id } = await ctx.params;
-  const corporateOrgId = await loadProjectOrgId(id);
-  if (!corporateOrgId) return apiError(404, "Project not found");
+  const project = await loadProjectForUpdate(id);
+  if (!project) return apiError(404, "Project not found");
+  const corporateOrgId = project.corporate_org_id;
 
   const input = UpdateCsrProjectSchema.parse(await req.json());
   await requirePermission(userId, corporateOrgId, "CSR.Project.Write");
 
   if (input.status === "approved" && !(await can(userId, corporateOrgId, "CSR.Project.Approve"))) {
     return apiError(403, "Missing required permission: CSR.Project.Approve");
+  }
+
+  // Real state machine, not a free-form field: a project found during manual
+  // QA could be pushed from "draft" straight to "completed" in one PATCH,
+  // with no NGO, no approval, and 0% compliance behind it (NITICSR-PROJ-003).
+  if (input.status !== undefined) {
+    const currentStatus = project.status as CsrProjectStatus;
+    if (!isValidStatusTransition(currentStatus, input.status)) {
+      return apiError(400, `Cannot move a project from "${currentStatus}" to "${input.status}"`);
+    }
+    if (input.status === "approved" && !input.ngoProfileId && !project.ngo_profile_id) {
+      return apiError(400, "Assign an implementing NGO before approving this project");
+    }
   }
 
   const fields: string[] = [];

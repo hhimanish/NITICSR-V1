@@ -1285,3 +1285,97 @@ blocked item, named with the specific thing it's waiting on.
   on one endpoint; extending it further is mechanical, deferred until a
   real integration partner needs a second endpoint, not spread thin
   speculatively.
+
+## Manual QA response — 21 August 2026
+
+An external manual QA pass against the live deployment (single session,
+one Clerk identity holding both a Corporate and an NGO workspace) found
+four defects that went to the heart of the platform's own claims: a
+project could take a real fund disbursement while still in draft status
+with no NGO assigned and 0% compliance; a project's status could jump
+straight from `draft` to `completed` in one PATCH with nothing behind
+it; an NGO showed up in Corporate discovery while its verification was
+still pending, directly contradicting the "every partner is verified
+before it's ever recommended" claim on the homepage; and the annual CSR
+budget's save path had no error surfacing at all, making a real failure
+indistinguishable from a UI glitch. Each was verified against the actual
+code (not assumed from the report) before being fixed, since an external
+report can be right about the symptom and wrong about the cause.
+
+### Confirmed and fixed
+
+- **Disbursement gating** (`app/api/v1/csr-projects/[id]/disbursements/route.ts`):
+  a disbursement can now only be recorded against a project whose status
+  is `approved`, `active`, or `completed` — previously the route checked
+  budget-not-exceeded and nothing else.
+- **Project status state machine** (`lib/project-lifecycle.ts`, wired into
+  `app/api/v1/csr-projects/[id]/route.ts`): `isValidStatusTransition`
+  defines the real allowed graph (`draft → proposed/cancelled`,
+  `proposed → draft/approved/cancelled`, `approved → active/cancelled`,
+  `active → completed/cancelled`, both `completed`/`cancelled` terminal).
+  Moving to `approved` also now requires an NGO already assigned. The
+  status dropdown on the project detail page filters to only the states
+  actually reachable from the current one, using the same function the
+  server enforces — no separate client-side copy of the rules to drift.
+- **Verified-only NGO discovery** (`app/api/v1/ngo-profiles/route.ts`):
+  the directory now only returns NGOs with at least one approved
+  verification request — the empty-state copy ("No verified NGO profiles
+  match yet") already assumed this filter existed. Every result on
+  `/corporate/discovery` now also carries a "Verified" badge, accurate
+  because the filter guarantees it.
+- **Silent save failures, made visible**: the annual CSR budget form
+  (`/corporate/financials`) and the disbursement form
+  (`/corporate/projects/[id]`) previously did nothing on a failed save —
+  no error, the input just sat there or reset on next reload, indistinguishable
+  from a working save that silently didn't persist. Both now surface the
+  server's actual error message. Static review of the budget save/read
+  path (schema, route, and the fund-utilization query) found no bug in the
+  code itself — the fiscal-year string, org-scoping, and the `ON CONFLICT`
+  target all matched correctly — so this fix is the honest limit of what
+  could be confirmed without live database access: if the save is still
+  failing for some environment-specific reason, that failure is now a
+  visible, actionable message instead of a silent no-op.
+- **Compliance score with zero projects**: `computeOrgComplianceSummary`
+  used to default to `100` when an organization had no non-draft
+  projects — reading as "we are fully compliant" when the honest state is
+  "there is nothing to measure yet." Now returns `null`, and every
+  consumer (dashboard, Compliance workspace, Sustainability page, impact
+  report, AI Copilot context) shows "—" instead of a percentage.
+- **Feature-flag copy leaking across org types**: `public_directory_opt_in`
+  only ever does anything for an NGO (only NGO profiles can appear in the
+  public directory — see `lib/ngo-intelligence.ts`), but its description
+  was showing to Corporate orgs too, and toggling it there did nothing.
+  `components/dashboard/feature-flags-panel.tsx` now hides a flag
+  entirely for org types it doesn't apply to, rather than trying to word
+  one description generically enough for every org type.
+- **No way to assign an implementing NGO**: neither the new-project form
+  nor the project detail page had ever had a control for this, even
+  though the API accepted `ngoProfileId` on both create and update. The
+  project detail page now has an "Implementing NGO" picker (verified
+  NGOs only) next to the Program picker it already had.
+- **Inconsistent phase numbering in public copy**: the About page and
+  Careers page cited two different, unrelated "Phase N" numbers. Both
+  now describe what's actually built without a specific phase number that
+  could drift out of sync again.
+
+### Findings that were already accurate, or aren't a code fix
+
+- **Auditor entry point**: the QA session couldn't locate one, but
+  `/auditor` and a footer "Auditor login" link both already exist — this
+  was under-tested, not missing.
+- **NGO document upload / "Verification Vault"**: correctly identified as
+  a text-link submission, not a real upload — this is the same storage-
+  vendor blocker documented since Phase 6/ERT 7 (`ngo_documents.file_url`
+  is a bare text field), not a regression. The landing page already
+  labels this section's document statuses as illustrative.
+- **Clerk running on development keys, and the Google OAuth consent
+  screen reading "Clerk" instead of "NITICSR"**: both real, both require
+  the account owner to provision a production Clerk instance and a custom
+  domain from the Clerk dashboard — no code change can fix a vendor
+  credential or branding configuration that lives outside this repo.
+- **No team/role management**: real and already honestly labeled in-app
+  ("Team member management... on the roadmap"). Building a real invite
+  flow is a substantial feature on its own — likely via Clerk's native
+  organization/invitation support rather than a bespoke system, since
+  Resend (for the invite email) is already wired up — and deserves its
+  own scoped pass rather than being folded into a bug-fix batch.

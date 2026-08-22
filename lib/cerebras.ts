@@ -66,7 +66,7 @@ export type CopilotContext = {
   ngoProfile?: { legalName: string; operatingStates: string[]; causeAreas: string[] } | null;
   policies?: { title: string; category: string; effectiveDate: string | null }[];
   compliance?: {
-    averageScore: number;
+    averageScore: number | null;
     totalProjects: number;
     projectsWithGaps: number;
     overdueObligations: number;

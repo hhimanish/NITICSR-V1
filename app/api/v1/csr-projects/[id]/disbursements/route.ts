@@ -12,11 +12,16 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 async function loadProject(projectId: string) {
   const { rows } = await getPool().query(
-    `SELECT corporate_org_id, budget_amount FROM csr_projects WHERE id = $1 AND deleted_at IS NULL`,
+    `SELECT corporate_org_id, budget_amount, status FROM csr_projects WHERE id = $1 AND deleted_at IS NULL`,
     [projectId]
   );
   return rows[0] ?? null;
 }
+
+/** A project found during manual QA could take a disbursement while still
+ * "draft" — no NGO, no approval, 0% compliance (NITICSR-PROJ-002). Funds can
+ * only be recorded against a project that's actually been approved. */
+const DISBURSABLE_STATUSES = ["approved", "active", "completed"];
 
 export const GET = withApiErrors(async (req: NextRequest, ctx: RouteContext) => {
   const { userId } = await auth();
@@ -55,6 +60,10 @@ export const POST = withApiErrors(async (req: NextRequest, ctx: RouteContext) =>
 
   const input = CreateDisbursementSchema.parse(await req.json());
   await requirePermission(userId, project.corporate_org_id, "CSR.Project.Write");
+
+  if (!DISBURSABLE_STATUSES.includes(project.status)) {
+    return apiError(400, `Cannot record a disbursement against a project that is still "${project.status}" — approve it first`);
+  }
 
   const budgetAmount = project.budget_amount ? Number(project.budget_amount) : null;
   if (budgetAmount !== null) {

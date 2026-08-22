@@ -58,10 +58,12 @@ export default function AboutPage() {
           <FadeIn delay={0.1}>
             <h2 className="font-heading text-2xl font-semibold">Where we are today</h2>
             <p className="mt-3 text-muted-foreground">
-              This is Phase 1: the public platform, a live AI-matchmaking demo running on
-              Cerebras-hosted open-weight models, and the foundations of the Corporate and
-              NGO workspaces. Verification tooling, escrow, and independent audit workflows
-              are being built next.
+              The public platform, a live AI-matchmaking demo running on Cerebras-hosted
+              open-weight models, and real Corporate, NGO, and Auditor workspaces — covering
+              governance, compliance, grant management, financial operations, project
+              execution, field verification, risk &amp; audit, and sustainability reporting —
+              are built and running today. Real payment execution, enterprise identity (SSO),
+              and multi-user team management are being built next.
             </p>
           </FadeIn>
           <FadeIn delay={0.2}>

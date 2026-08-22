@@ -57,6 +57,8 @@ lib/
   api-utils.ts         withApiErrors, apiSuccess/apiError, paginationParams
   schemas-v1.ts        Zod schemas for all v1 API input
   governance.ts        Immutable decision log (recordDecision)
+  project-lifecycle.ts Real status state machine for csr_projects (found missing during
+                       manual QA 21 Aug 2026 — see docs/ARCHITECTURE.md's QA response section)
   compliance.ts        Compliance obligations + deterministic gap checks + score
   ngo-intelligence.ts  Honest NGO trust score (only real components — see ADR 0005 note above)
   grants.ts            Grant readiness score + disbursement ledger math (ERT 4)

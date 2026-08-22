@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { isValidStatusTransition, type CsrProjectStatus } from "@/lib/project-lifecycle";
 import { cn } from "@/lib/utils";
 
 const SDG_NAMES: Record<number, string> = {
@@ -54,9 +55,13 @@ type ProjectDetail = {
   sdgs: Sdg[] | null;
   is_ongoing_project: boolean;
   program_id: string | null;
+  ngo_profile_id: string | null;
+  ngo_legal_name: string | null;
 };
 
-const STATUSES = ["draft", "proposed", "approved", "active", "completed", "cancelled"];
+type VerifiedNgo = { id: string; legal_name: string };
+
+const STATUSES: CsrProjectStatus[] = ["draft", "proposed", "approved", "active", "completed", "cancelled"];
 
 type ComplianceCheck = { key: string; label: string; passed: boolean; severity: "high" | "medium" | "low" };
 type Obligation = { id: string; description: string; due_date: string; status: "pending" | "satisfied" | "waived" };
@@ -175,6 +180,10 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
   const [addingDisbursement, setAddingDisbursement] = useState(false);
   const [forecast, setForecast] = useState<Forecast>(null);
   const [renewing, setRenewing] = useState(false);
+
+  const [verifiedNgos, setVerifiedNgos] = useState<VerifiedNgo[] | null>(null);
+  const [selectedNgoId, setSelectedNgoId] = useState("");
+  const [assigningNgo, setAssigningNgo] = useState(false);
 
   const [milestones, setMilestones] = useState<MilestoneRow[]>([]);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
@@ -347,6 +356,41 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
     if (res.ok) setProject((prev) => (prev ? { ...prev, program_id: programId || null } : prev));
   }
 
+  // Found during manual QA (NITICSR-NGO-014): there was no way anywhere in
+  // the product to attach an implementing NGO to a project — the API
+  // supported it, but no UI control existed on either the creation form or
+  // this detail page. Lists verified NGOs only (the discovery API already
+  // filters to approved verification, see NITICSR-NGO-004).
+  useEffect(() => {
+    fetch(`/api/v1/ngo-profiles`)
+      .then((r) => r.json())
+      .then((body) => setVerifiedNgos(body.data ?? []));
+  }, []);
+
+  async function assignNgo() {
+    if (!selectedNgoId) return;
+    setAssigningNgo(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/v1/csr-projects/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ngoProfileId: selectedNgoId }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error ?? "Could not assign NGO");
+        return;
+      }
+      reload();
+      setSelectedNgoId("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not assign NGO");
+    } finally {
+      setAssigningNgo(false);
+    }
+  }
+
   async function submitReview(e: React.FormEvent) {
     e.preventDefault();
     setSubmittingReview(true);
@@ -384,6 +428,7 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
     const amount = Number(disbursementAmount);
     if (!amount || amount <= 0) return;
     setAddingDisbursement(true);
+    setError(null);
     try {
       const res = await fetch(`/api/v1/csr-projects/${id}/disbursements`, {
         method: "POST",
@@ -396,14 +441,19 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
           invoiceReference: disbursementInvoiceRef || undefined,
         }),
       });
-      if (res.ok) {
-        setDisbursementAmount("");
-        setDisbursementNote("");
-        setDisbursementVendor("");
-        setDisbursementCategory("");
-        setDisbursementInvoiceRef("");
-        loadGrantData();
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error ?? "Could not record disbursement");
+        return;
       }
+      setDisbursementAmount("");
+      setDisbursementNote("");
+      setDisbursementVendor("");
+      setDisbursementCategory("");
+      setDisbursementInvoiceRef("");
+      loadGrantData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not record disbursement");
     } finally {
       setAddingDisbursement(false);
     }
@@ -669,7 +719,9 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {STATUSES.map((s) => (
+              {STATUSES.filter(
+                (s) => s === project.status || isValidStatusTransition(project.status as CsrProjectStatus, s)
+              ).map((s) => (
                 <SelectItem key={s} value={s}>
                   {s}
                 </SelectItem>
@@ -694,6 +746,30 @@ export default function CsrProjectDetailPage({ params }: { params: Promise<{ id:
           >
             {project.is_ongoing_project ? "Ongoing (multi-year)" : "One-time"}
           </button>
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Implementing NGO</p>
+          {project.ngo_legal_name ? (
+            <p className="mt-1 text-sm font-medium">{project.ngo_legal_name}</p>
+          ) : (
+            <div className="mt-1 flex items-center gap-1.5">
+              <Select value={selectedNgoId} onValueChange={(v) => setSelectedNgoId(v ?? "")}>
+                <SelectTrigger className="w-44" aria-label="Assign implementing NGO">
+                  <SelectValue placeholder="None assigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(verifiedNgos ?? []).map((ngo) => (
+                    <SelectItem key={ngo.id} value={ngo.id}>
+                      {ngo.legal_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" disabled={!selectedNgoId || assigningNgo} onClick={assignNgo}>
+                Assign
+              </Button>
+            </div>
+          )}
         </div>
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Program</p>

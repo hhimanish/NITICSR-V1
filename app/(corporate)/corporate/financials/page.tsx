@@ -46,6 +46,7 @@ export default function FinancialsPage() {
   const [transfers, setTransfers] = useState<UnspentTransfer[] | null>(null);
   const [referenceByTransfer, setReferenceByTransfer] = useState<Record<string, string>>({});
   const [markingId, setMarkingId] = useState<string | null>(null);
+  const [budgetError, setBudgetError] = useState<string | null>(null);
 
   function load() {
     fetch(`/api/v1/organizations/${org.id}/fund-utilization?fiscalYear=${fiscalYear}`)
@@ -63,7 +64,11 @@ export default function FinancialsPage() {
 
   async function saveBudget() {
     const amount = Number(budgetInput);
-    if (!amount || amount < 0) return;
+    setBudgetError(null);
+    if (!budgetInput || Number.isNaN(amount) || amount < 0) {
+      setBudgetError("Enter a valid, non-negative amount");
+      return;
+    }
     setSavingBudget(true);
     try {
       const res = await fetch(`/api/v1/organizations/${org.id}/annual-budgets`, {
@@ -71,7 +76,14 @@ export default function FinancialsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fiscalYear, budgetAmount: amount }),
       });
-      if (res.ok) load();
+      const body = await res.json();
+      if (!res.ok) {
+        setBudgetError(body.error ?? "Could not save budget");
+        return;
+      }
+      load();
+    } catch (err) {
+      setBudgetError(err instanceof Error ? err.message : "Could not save budget");
     } finally {
       setSavingBudget(false);
     }
@@ -151,6 +163,7 @@ export default function FinancialsPage() {
             Save
           </Button>
         </div>
+        {budgetError && <p className="mt-2 text-xs text-destructive">{budgetError}</p>}
       </section>
 
       <section className="mt-6 rounded-2xl border border-border bg-card p-5">

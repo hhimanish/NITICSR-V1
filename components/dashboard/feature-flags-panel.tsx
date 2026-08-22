@@ -15,6 +15,19 @@ type FeatureFlagView = {
 };
 
 /**
+ * Some flags only do anything for one organization type — e.g.
+ * public_directory_opt_in only ever lists an NGO's profile (see
+ * lib/ngo-intelligence.ts's listPublicDirectoryNgos). Found during manual QA
+ * (NITICSR-COPY-007): the flag's NGO-specific description was showing to
+ * Corporate orgs too, and toggling it there does nothing at all. Hiding it
+ * outright for org types it doesn't apply to is more honest than rewording
+ * the copy to be vague enough to fit every org type.
+ */
+const FLAG_APPLIES_TO: Record<string, Array<"corporate" | "ngo" | "auditor">> = {
+  public_directory_opt_in: ["ngo"],
+};
+
+/**
  * Org-scoped feature flag overrides only — global defaults stay
  * API/migration-managed (Platform.FeatureFlag.Manage), since there's no
  * dedicated platform-admin console in this product yet. A corporate/NGO
@@ -30,10 +43,13 @@ export function FeatureFlagsPanel() {
   function load() {
     fetch(`/api/v1/feature-flags?organizationId=${org.id}`)
       .then((r) => r.json())
-      .then((body) => setFlags(body.data ?? []));
+      .then((body) => {
+        const all: FeatureFlagView[] = body.data ?? [];
+        setFlags(all.filter((flag) => (FLAG_APPLIES_TO[flag.key] ?? [org.type]).includes(org.type)));
+      });
   }
 
-  useEffect(load, [org.id]);
+  useEffect(load, [org.id, org.type]);
 
   async function toggle(flag: FeatureFlagView) {
     setPendingKey(flag.key);
